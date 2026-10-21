@@ -1,0 +1,339 @@
+"use client";
+
+import {
+  AlertOctagon,
+  Banknote,
+  Building2,
+  Check,
+  ChevronDown,
+  Copy,
+  FileText,
+  Landmark,
+  Lock,
+  Mail,
+  Printer,
+  ShieldCheck,
+  Ticket as TicketIcon,
+  TrendingUp,
+  Zap,
+} from "lucide-react";
+import { useMemo, useState } from "react";
+import { formatUsd, gradeTone, toneClasses } from "@/lib/grading";
+import { boardRisks, compositeScore, generateTickets, mailtoHref, quickWins, type AuditContext, type BoardRisk, type Ticket } from "@/lib/reports";
+import type { OrgProfile } from "@/lib/sampleData";
+import { Button, Card, ClinicBadge, EmptyState, SectionTitle, cx } from "./ui";
+
+type View = "tickets" | "board";
+
+export function ActionPlan({ ctx, onOrgChange, view: sub, onViewChange: setSub }: { ctx: AuditContext; onOrgChange: (o: OrgProfile) => void; view: View; onViewChange: (v: View) => void }) {
+  const tickets = useMemo(() => generateTickets(ctx), [ctx]);
+  const composite = useMemo(() => compositeScore(ctx), [ctx]);
+
+  function print() {
+    setSub("board");
+    // Let React paint the one-pager before opening the print dialog.
+    setTimeout(() => window.print(), 150);
+  }
+
+  return (
+    <div className="space-y-6">
+      <div className="print:hidden">
+        <SectionTitle
+          icon={<TicketIcon className="h-5 w-5" />}
+          title="Action Plan & Ticket Generator"
+          subtitle="Every finding from Tabs 1–3, turned into copy-paste help desk tickets for your MSP and a one-page briefing your board can read in two minutes."
+          ids={["governance-r-17", "vendors-msps-02"]}
+        />
+        <OrgEditor org={ctx.org} onChange={onOrgChange} />
+        <div className="mt-6 flex flex-wrap items-center justify-between gap-3">
+          <div className="inline-flex rounded-xl bg-slate-200/70 p-1">
+            {(
+              [
+                ["tickets", "A · MSP Help Desk Tickets", TicketIcon],
+                ["board", "B · Board-Ready One-Pager", Landmark],
+              ] as const
+            ).map(([k, label, Icon]) => (
+              <button
+                key={k}
+                onClick={() => setSub(k)}
+                className={cx("inline-flex items-center gap-1.5 rounded-lg px-4 py-2 text-sm font-semibold transition", sub === k ? "bg-white text-slate-900 shadow-sm" : "text-slate-600 hover:text-slate-900")}
+              >
+                <Icon className="h-4 w-4" />
+                {label}
+              </button>
+            ))}
+          </div>
+          <Button variant="dark" onClick={print} disabled={composite.score === null}>
+            <Printer className="h-4 w-4" /> Print / Save Board One-Pager as PDF
+          </Button>
+        </div>
+      </div>
+
+      {sub === "tickets" ? (
+        <div className="space-y-5 print:hidden">
+          {tickets.map((t) => (
+            <TicketCard key={t.id} t={t} mspEmail={ctx.org.mspEmail} />
+          ))}
+        </div>
+      ) : composite.score === null ? (
+        <EmptyState icon={<Landmark className="h-6 w-6" />} title="Nothing to brief yet">
+          Complete at least one module, or click <b>⚡ Load Full Presentation Demo</b> above.
+        </EmptyState>
+      ) : (
+        <BoardOnePager ctx={ctx} composite={composite} />
+      )}
+    </div>
+  );
+}
+
+function OrgEditor({ org, onChange }: { org: OrgProfile; onChange: (o: OrgProfile) => void }) {
+  const field = (key: keyof OrgProfile, label: string, type = "text") => (
+    <label className="flex flex-col gap-1">
+      <span className="text-[11px] font-semibold tracking-wide text-slate-500 uppercase">{label}</span>
+      <input
+        type={type}
+        value={org[key]}
+        onChange={(e) => onChange({ ...org, [key]: type === "number" ? Number(e.target.value) : e.target.value })}
+        className="rounded-lg border border-slate-300 px-3 py-2 text-sm outline-none focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/15"
+      />
+    </label>
+  );
+  return (
+    <Card className="p-5">
+      <div className="mb-3 flex items-center gap-2 text-sm font-bold text-slate-800">
+        <Building2 className="h-4 w-4" /> Organization Profile <span className="font-normal text-slate-500">— used in tickets and the one-pager</span>
+      </div>
+      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
+        {field("orgName", "Organization")}
+        {field("staffCount", "Staff", "number")}
+        {field("mspName", "MSP name")}
+        {field("mspEmail", "MSP help desk email", "email")}
+        {field("preparedBy", "Prepared by")}
+      </div>
+    </Card>
+  );
+}
+
+const PRIORITY_CLS: Record<Ticket["priority"], string> = {
+  Critical: "bg-rose-600 text-white",
+  High: "bg-amber-400 text-navy-950",
+  Medium: "bg-slate-200 text-slate-700",
+};
+
+function TicketCard({ t, mspEmail }: { t: Ticket; mspEmail: string }) {
+  const [copied, setCopied] = useState(false);
+  const [open, setOpen] = useState(true);
+
+  async function copy() {
+    const text = `Subject: ${t.subject}\n\n${t.body}`;
+    try {
+      await navigator.clipboard.writeText(text);
+    } catch {
+      const ta = document.createElement("textarea");
+      ta.value = text;
+      document.body.appendChild(ta);
+      ta.select();
+      document.execCommand("copy");
+      ta.remove();
+    }
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  }
+
+  return (
+    <Card className="overflow-hidden">
+      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 bg-gradient-to-r from-slate-50 to-white px-5 py-4">
+        <div className="flex items-center gap-3">
+          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-navy-900 font-mono text-sm font-bold text-emerald-300">#{t.id}</div>
+          <div>
+            <div className="flex flex-wrap items-center gap-2">
+              <h3 className="font-bold text-slate-900">{t.title}</h3>
+              {t.ready && <span className={cx("rounded-md px-2 py-0.5 text-[11px] font-bold tracking-wide uppercase", PRIORITY_CLS[t.priority])}>{t.priority}</span>}
+              {t.ready && <span className="text-xs text-slate-500">{t.findingCount} finding{t.findingCount === 1 ? "" : "s"}</span>}
+            </div>
+            <div className="mt-1 flex flex-wrap gap-1">
+              {t.clinicIds.map((id) => (
+                <ClinicBadge key={id} id={id} />
+              ))}
+            </div>
+          </div>
+        </div>
+        {t.ready && (
+          <div className="flex flex-wrap gap-2">
+            <Button variant={copied ? "primary" : "dark"} onClick={copy}>
+              {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+              {copied ? "Copied!" : "Copy Ticket to Clipboard"}
+            </Button>
+            <a
+              href={mailtoHref(mspEmail, t)}
+              className="inline-flex items-center gap-2 rounded-xl bg-white px-4 py-2 text-sm font-semibold text-slate-800 shadow-sm ring-1 ring-slate-300 ring-inset hover:bg-slate-50"
+            >
+              <Mail className="h-4 w-4" /> Open in Email Client
+            </a>
+            <button onClick={() => setOpen(!open)} className="rounded-lg p-2 text-slate-500 hover:bg-slate-100" aria-label={open ? "Collapse ticket" : "Expand ticket"}>
+              <ChevronDown className={cx("h-4 w-4 transition", !open && "-rotate-90")} />
+            </button>
+          </div>
+        )}
+      </div>
+      {!t.ready ? (
+        <div className="px-5 py-6 text-sm text-slate-500">{t.emptyReason}</div>
+      ) : (
+        open && (
+          <div className="p-5">
+            <div className="mb-2 text-xs text-slate-500">
+              <b className="text-slate-700">To:</b> {mspEmail || "(your MSP help desk)"} &nbsp;·&nbsp; <b className="text-slate-700">Subject:</b> {t.subject}
+            </div>
+            <pre className="ticket-body max-h-[460px] overflow-auto rounded-xl border border-slate-200 bg-slate-50 p-4 whitespace-pre-wrap text-slate-800">{t.body}</pre>
+          </div>
+        )
+      )}
+    </Card>
+  );
+}
+
+const LEVEL_CLS: Record<BoardRisk["level"], string> = {
+  High: "bg-rose-600 text-white",
+  Elevated: "bg-amber-400 text-navy-950",
+  Low: "bg-emerald-600 text-white",
+  "Not assessed": "bg-slate-200 text-slate-600",
+};
+
+function BoardOnePager({ ctx, composite }: { ctx: AuditContext; composite: ReturnType<typeof compositeScore> }) {
+  const risks = boardRisks(ctx);
+  const wins = quickWins(ctx);
+  const tone = toneClasses[gradeTone(composite.grade)];
+  const savings = ctx.identity?.annualWaste ?? 0;
+  const highCount = risks.filter((r) => r.level === "High").length;
+  const date = new Date().toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" });
+
+  const bottomLine =
+    composite.score! >= 90
+      ? `${ctx.org.orgName}'s core cyber protections are in good shape. The priority is keeping them verified as staff, vendors and systems change.`
+      : composite.score! >= 70
+        ? `${ctx.org.orgName} has a reasonable foundation, but ${highCount || "several"} risk area${highCount === 1 ? "" : "s"} need${highCount === 1 ? "s" : ""} attention. Most fixes are configuration changes our MSP can make within 30 days at little or no cost.`
+        : `${ctx.org.orgName} is exposed to preventable fraud and ransomware risks that our MSP contract does not currently cover. The good news: most fixes are low-cost configuration changes that can be completed within 30 days.`;
+
+  return (
+    <article id="board-one-pager" className="animate-fade-up mx-auto max-w-[8.5in] rounded-2xl border border-slate-200 bg-white p-8 shadow-xl shadow-slate-200/60 sm:p-10">
+      <header className="flex flex-wrap items-start justify-between gap-4 border-b-2 border-navy-900 pb-5">
+        <div>
+          <div className="flex items-center gap-2 text-[11px] font-bold tracking-[0.18em] text-emerald-700 uppercase">
+            <ShieldCheck className="h-4 w-4" /> Board Cyber Risk Briefing
+          </div>
+          <h1 className="mt-1 text-3xl font-extrabold tracking-tight text-navy-950">{ctx.org.orgName}</h1>
+          <div className="mt-1 text-sm text-slate-600">
+            {ctx.org.staffCount} staff · IT managed by {ctx.org.mspName} · {date}
+          </div>
+        </div>
+        <div className="text-right text-xs text-slate-500">
+          <div className="font-semibold text-slate-700">Prepared by</div>
+          <div>{ctx.org.preparedBy}</div>
+          <div className="mt-2 inline-block rounded border border-slate-300 px-2 py-0.5 text-[10px] font-bold tracking-widest text-slate-500 uppercase">Confidential — Board Use</div>
+        </div>
+      </header>
+
+      <section className="print-avoid-break mt-6 grid gap-6 sm:grid-cols-[auto_1fr]">
+        <div className={cx("flex flex-col items-center justify-center rounded-2xl px-8 py-5 ring-2 ring-inset", tone.bg, tone.ring)}>
+          <div className="text-[11px] font-bold tracking-widest text-slate-500 uppercase">Overall Grade</div>
+          <div className={cx("text-7xl leading-none font-black tracking-tighter", tone.text)}>{composite.grade}</div>
+          <div className="mt-1 text-sm font-semibold text-slate-600 tabular-nums">{composite.score} / 100</div>
+        </div>
+        <div className="flex flex-col justify-center gap-3">
+          <p className="text-[15px] leading-relaxed text-slate-800">
+            <b>Bottom line: </b>
+            {bottomLine}
+          </p>
+          <div className="space-y-2">
+            {composite.parts.map((p) => (
+              <div key={p.key} className="flex items-center gap-3 text-sm">
+                <div className="w-48 shrink-0 text-slate-600">{p.label}</div>
+                <div className="h-2.5 flex-1 overflow-hidden rounded-full bg-slate-100">
+                  <div className={cx("h-full rounded-full", toneClasses[gradeTone(p.grade)].solid)} style={{ width: `${p.score ?? 0}%` }} />
+                </div>
+                <div className="w-20 text-right text-xs font-semibold text-slate-700 tabular-nums">{p.score === null ? "Not assessed" : `${p.grade} · ${p.score}`}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <section className="mt-7">
+        <h2 className="flex items-center gap-2 text-sm font-bold tracking-wide text-navy-900 uppercase">
+          <AlertOctagon className="h-4 w-4 text-rose-600" /> Top 3 Business Risks
+        </h2>
+        <div className="mt-3 grid gap-3 sm:grid-cols-3">
+          {risks.map((r) => (
+            <div key={r.key} className="print-avoid-break rounded-xl border border-slate-200 p-4">
+              <div className="flex items-start justify-between gap-2">
+                <h3 className="text-sm leading-snug font-bold text-slate-900">{r.title}</h3>
+                <span className={cx("shrink-0 rounded px-1.5 py-0.5 text-[10px] font-bold tracking-wide uppercase", LEVEL_CLS[r.level])}>{r.level}</span>
+              </div>
+              <p className="mt-2 text-xs leading-relaxed text-slate-600">{r.narrative}</p>
+              {r.drivers.length > 0 && (
+                <ul className="mt-2 space-y-1 border-t border-slate-100 pt-2 text-[11.5px] text-slate-700">
+                  {r.drivers.slice(0, 4).map((d) => (
+                    <li key={d} className="flex gap-1.5">
+                      <span className="text-rose-500">▸</span>
+                      {d}
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+          ))}
+        </div>
+      </section>
+
+      <section className="print-avoid-break mt-7 grid gap-5 sm:grid-cols-[1fr_220px]">
+        <div>
+          <h2 className="flex items-center gap-2 text-sm font-bold tracking-wide text-navy-900 uppercase">
+            <Zap className="h-4 w-4 text-amber-500" /> Immediate Quick Wins (next 30 days)
+          </h2>
+          <ol className="mt-3 divide-y divide-slate-100 rounded-xl border border-slate-200">
+            {wins.map((w, i) => (
+              <li key={w.title} className="flex items-start gap-3 px-4 py-2.5">
+                <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-emerald-600 text-[10px] font-bold text-white">{i + 1}</span>
+                <div className="flex-1">
+                  <div className="text-sm font-semibold text-slate-900">{w.title}</div>
+                  <div className="text-xs text-slate-500">{w.detail}</div>
+                </div>
+                <div className="shrink-0 text-right text-[11px] font-medium text-slate-500">{w.effort}</div>
+              </li>
+            ))}
+            {wins.length === 0 && <li className="px-4 py-3 text-sm text-slate-500">No urgent quick wins identified.</li>}
+          </ol>
+        </div>
+        <div className="flex flex-col gap-3">
+          <div className="rounded-xl bg-navy-900 p-4 text-white">
+            <div className="flex items-center gap-1.5 text-[11px] font-bold tracking-widest text-emerald-300 uppercase">
+              <Banknote className="h-4 w-4" /> Est. Annual Savings
+            </div>
+            <div className="mt-1 text-3xl font-extrabold tracking-tight tabular-nums">{formatUsd(savings)}</div>
+            <div className="text-xs text-slate-300">{ctx.identity ? `Reclaimed from ${ctx.identity.wasted.length} unused license${ctx.identity.wasted.length === 1 ? "" : "s"}` : "Run the identity audit to estimate"}</div>
+          </div>
+          <div className="rounded-xl border border-slate-200 p-4">
+            <div className="flex items-center gap-1.5 text-[11px] font-bold tracking-widest text-slate-500 uppercase">
+              <TrendingUp className="h-4 w-4" /> Board Asks
+            </div>
+            <ul className="mt-2 space-y-1.5 text-xs text-slate-700">
+              <li>1. Direct staff to send the 3 attached tickets to {ctx.org.mspName}.</li>
+              <li>2. Require written MSP confirmation within 30 days.</li>
+              <li>3. Re-run this audit before the next board meeting.</li>
+            </ul>
+          </div>
+        </div>
+      </section>
+
+      <footer className="mt-7 flex flex-wrap items-center justify-between gap-3 border-t border-slate-200 pt-4 text-[10.5px] text-slate-500">
+        <div className="flex items-center gap-1.5">
+          <Lock className="h-3 w-3" /> Zero data retention: user lists and scorecard answers were processed only in the browser. Domain checks use public DNS and HTTP headers.
+        </div>
+        <div className="flex items-center gap-1.5">
+          <FileText className="h-3 w-3" /> Cyber Ready Clinic <ClinicBadge id="governance-r-17" />
+        </div>
+      </footer>
+    </article>
+  );
+}
+

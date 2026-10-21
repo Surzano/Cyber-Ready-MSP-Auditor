@@ -1,0 +1,23 @@
+displayName,userPrincipalName,jobTitle,accountEnabled,mfaStatus,lastSignInDateTime,role,licenses,monthlyCost,accountType
+Margaret Chen,margaret.chen@hopevalleycs.org,Executive Director,True,Enabled,2026-10-20T23:31:19Z,Global Admin,Microsoft 365 Business Premium,22,Member
+David Okafor,david.okafor@hopevalleycs.org,Finance Director,True,Enforced,2026-10-19T23:31:19Z,User,Microsoft 365 Business Premium,22,Member
+Linda Park,linda.park@hopevalleycs.org,Operations Manager,True,Enabled,2026-10-18T23:31:19Z,Global Admin,Microsoft 365 Business Premium,22,Member
+Apex IT Admin,apexadmin@hopevalleycs.org,MSP Administrator,True,Enforced,2026-10-16T23:31:19Z,Global Admin,Unlicensed,0,Member
+Apex IT Technician,apex.tech2@hopevalleycs.org,MSP Technician,True,Enabled,2026-10-12T23:31:19Z,Global Admin,Unlicensed,0,Member
+Tom Reyes,tom.reyes@hopevalleycs.org,Volunteer IT Helper,True,Disabled,2026-10-09T23:31:19Z,Global Admin,Microsoft 365 Business Standard,12.5,Member
+Robert Hayes,robert.hayes@hopevalleycs.org,Board Chair,True,Disabled,2026-10-03T23:31:19Z,User,Microsoft 365 Business Basic,6,Member
+Aisha Johnson,aisha.johnson@hopevalleycs.org,Volunteer Coordinator,True,Disabled,2026-10-17T23:31:19Z,User,Microsoft 365 Business Standard,12.5,Member
+Kevin Walsh,kevin.walsh@hopevalleycs.org,Former Case Manager,True,Disabled,2026-05-10T23:31:19Z,User,Microsoft 365 Business Premium,22,Member
+Sarah Lindqvist,sarah.lindqvist@hopevalleycs.org,Former Grants Manager,True,Enabled,2026-03-23T23:31:19Z,User,Microsoft 365 Business Premium,22,Member
+Marcus Bell,marcus.bell@hopevalleycs.org,Former Development Associate,True,Enabled,2026-06-12T23:31:19Z,User,Microsoft 365 Business Premium,22,Member
+Jennifer Wu,jennifer.wu@hopevalleycs.org,Former Program Director,False,Enabled,2026-02-23T23:31:19Z,User,Unlicensed,0,Member
+Info Shared Mailbox,info@hopevalleycs.org,Shared Mailbox,False,Disabled,Never,User,Unlicensed,0,Shared/Service
+Priya Natarajan,priya.natarajan@hopevalleycs.org,Program Director,True,Enabled,2026-10-20T23:31:19Z,User,Microsoft 365 Business Premium,22,Member
+James Carter,james.carter@hopevalleycs.org,Case Manager,True,Enforced,2026-10-19T23:31:19Z,User,Microsoft 365 Business Premium,22,Member
+Elena Rodriguez,elena.rodriguez@hopevalleycs.org,Case Manager,True,Enabled,2026-10-20T23:31:19Z,User,Microsoft 365 Business Premium,22,Member
+Samuel Brooks,samuel.brooks@hopevalleycs.org,Youth Program Lead,True,Enabled,2026-10-15T23:31:19Z,User,Microsoft 365 Business Standard,12.5,Member
+Grace Kim,grace.kim@hopevalleycs.org,Development Director,True,Enabled,2026-10-18T23:31:19Z,User,Microsoft 365 Business Premium,22,Member
+Omar Haddad,omar.haddad@hopevalleycs.org,Communications Coordinator,True,Enabled,2026-10-19T23:31:19Z,User,Microsoft 365 Business Standard,12.5,Member
+Rachel Green,rachel.green@hopevalleycs.org,HR & Office Manager,True,Enforced,2026-10-20T23:31:19Z,Billing Admin,Microsoft 365 Business Premium,22,Member
+Daniel Foster,daniel.foster@hopevalleycs.org,Food Pantry Coordinator,True,Enabled,2026-10-13T23:31:19Z,User,Microsoft 365 Business Basic,6,Member
+Mei Lin,mei.lin@hopevalleycs.org,Bookkeeper (Part-Time),True,Enabled,2026-10-06T23:31:19Z,User,Microsoft 365 Business Premium,22,Member
