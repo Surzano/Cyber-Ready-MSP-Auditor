@@ -160,6 +160,18 @@ describe("DMARC", () => {
     expect(c.points).toBe(points);
   });
 
+  it("never recommends weakening a passing p=reject policy", async () => {
+    const email = await analyzeEmail("org.org", fakeDns({ "_dmarc.org.org": ["v=DMARC1; p=reject; rua=mailto:r@org.org"] }));
+    expect(check(assembleResult("org.org", "live-server", email, UNAVAILABLE_WEB), "dmarc").fix).toBeUndefined();
+  });
+
+  it("recommends pct=100, not quarantine, for a partial p=reject", async () => {
+    const email = await analyzeEmail("org.org", fakeDns({ "_dmarc.org.org": ["v=DMARC1; p=reject; pct=25; rua=mailto:r@org.org"] }));
+    const fix = check(assembleResult("org.org", "live-server", email, UNAVAILABLE_WEB), "dmarc").fix!;
+    expect(fix).toContain("p=reject; pct=100");
+    expect(fix).not.toContain("quarantine");
+  });
+
   it("fails when DMARC is missing", async () => {
     const email = await analyzeEmail("org.org", fakeDns({}));
     const c = check(assembleResult("org.org", "live-server", email, UNAVAILABLE_WEB), "dmarc");

@@ -382,6 +382,8 @@ function dmarcCheck(domain: string, a: EmailAnalysis): CheckResult {
   if (dmarc.policy === "reject") {
     return {
       ...base,
+      // Already at p=reject: the only remaining step is applying it to all mail.
+      fix: `TXT  _dmarc.${domain}  "v=DMARC1; p=reject; pct=100; rua=${rua}; fo=1"`,
       status: dmarc.pct !== null && dmarc.pct < 100 ? "warn" : "pass",
       points: 25 - ruaPenalty - (dmarc.pct !== null && dmarc.pct < 100 ? 5 : 0),
       summary: "DMARC p=reject (full enforcement)",
@@ -613,7 +615,8 @@ export function buildWebChecks(web: WebDetails): CheckResult[] {
 }
 
 export function buildEmailChecks(domain: string, a: EmailAnalysis): CheckResult[] {
-  return [spfCheck(domain, a), dmarcCheck(domain, a), dkimCheck(domain, a)];
+  // A passing check needs no fix line — otherwise p=reject would be "fixed" down to p=quarantine.
+  return [spfCheck(domain, a), dmarcCheck(domain, a), dkimCheck(domain, a)].map((c) => (c.status === "pass" ? { ...c, fix: undefined } : c));
 }
 
 export function assembleResult(

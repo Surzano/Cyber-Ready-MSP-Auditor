@@ -30,6 +30,16 @@ export function DomainScanner({
   const [error, setError] = useState<ScanError | null>(null);
   const [view, setView] = useState<"plain" | "technical">("plain");
 
+  // When a result arrives from anywhere (scan, simulated, ⚡ demo), show its cleaned domain in the box.
+  const [shownDomain, setShownDomain] = useState(result?.domain);
+  if (result?.domain !== shownDomain) {
+    setShownDomain(result?.domain);
+    if (result) {
+      setInput(result.domain);
+      setError(null);
+    }
+  }
+
   async function runScan(e?: React.FormEvent) {
     e?.preventDefault();
     setError(null);
