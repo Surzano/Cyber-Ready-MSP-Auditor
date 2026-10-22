@@ -1,18 +1,18 @@
 # Domain scanner validation
 
-Run 2026-10-22 17:46 UTC against http://localhost:3123 · 25 domains · 0 scan errors
+Run 2026-10-22 17:53 UTC against https://msp-auditor.vercel.app · 25 domains · 0 scan errors
 
-**Overall agreement: 148 of 148 comparisons (100%).**
+**Overall agreement: 153 of 153 comparisons (100%).**
 
 | Check | Agreed | Rate |
 |---|---|---|
 | SPF policy | 23 of 23 | 100% |
 | DMARC policy | 25 of 25 | 100% |
-| HSTS | 20 of 20 | 100% |
-| CSP | 20 of 20 | 100% |
-| Clickjacking | 20 of 20 | 100% |
-| X-Content-Type-Options | 20 of 20 | 100% |
-| Referrer-Policy | 20 of 20 | 100% |
+| HSTS | 21 of 21 | 100% |
+| CSP | 21 of 21 | 100% |
+| Clickjacking | 21 of 21 | 100% |
+| X-Content-Type-Options | 21 of 21 | 100% |
+| Referrer-Policy | 21 of 21 | 100% |
 
 ## How this was checked
 
@@ -33,13 +33,13 @@ Run 2026-10-22 17:46 UTC against http://localhost:3123 · 25 domains · 0 scan e
 | savethechildren.org | C (77) | ✓ ~all / ~all | ✓ reject / reject | 0/0 | not graded | D- (25) |
 | worldwildlife.org | B (88) | ✓ -all / -all | ✓ quarantine / quarantine | 0/0 | not graded | C+ (60) |
 | goodwill.org | B (82) | – ~all / redirect | ✓ reject / reject | 0/0 | not graded | F (10) |
-| bgca.org | F (59) | – -all / redirect | ✓ none / none | 5/5 | 21/40 | F (0) |
+| bgca.org | F (50) | – no all / redirect | ✓ none / none | 5/5 | 21/40 | F (0) |
 | nature.org | F (56) | ✓ ?all / ?all | ✓ quarantine / quarantine | 5/5 | 29/40 | F (20) |
 | charitywater.org | B (84) | ✓ ~all / ~all | ✓ quarantine / quarantine | 5/5 | 37/40 | B (75) |
 | kiva.org | C (72) | ✓ ~all / ~all | ✓ none / none | 5/5 | 37/40 | B (75) |
 | eff.org | F (59) | ✓ -all / -all | ✓ none / none | 5/5 | 18/40 | C (50) |
 | khanacademy.org | A (94) | ✓ -all / -all | ✓ reject / reject | 5/5 | 34/40 | D (30) |
-| girlscouts.org | D (67) | ✓ -all / -all | ✓ none / none | 5/5 | 29/40 | B- (65) |
+| girlscouts.org | C (70) | ✓ -all / -all | ✓ none / none | 5/5 | 29/40 | B- (65) |
 | bbbs.org | C (73) | ✓ -all / -all | ✓ reject / reject | 5/5 | 16/40 | D (35) |
 | specialolympics.org | F (54) | ✓ -all / -all | ✓ none / none | 5/5 | 16/40 | D- (25) |
 | stjude.org | B (88) | ✓ ~all / ~all | ✓ reject / reject | 5/5 | 34/40 | F (20) |
@@ -48,7 +48,7 @@ Run 2026-10-22 17:46 UTC against http://localhost:3123 · 25 domains · 0 scan e
 | care.org | C (75) | ✓ -all / -all | ✓ quarantine / quarantine | 5/5 | 25/40 | D (30) |
 | heifer.org | B (81) | ✓ ~all / ~all | ✓ reject / reject | 5/5 | 27/40 | unavailable (The site seems to be down.) |
 | mozilla.org | A (91) | ✓ ~all / ~all | ✓ reject / reject | 5/5 | 37/40 | B+ (80) |
-| doctorswithoutborders.org | F (55) | ✓ ~all / ~all | ✓ none / none | 0/0 | not graded | B (75) |
+| doctorswithoutborders.org | C (70) | ✓ ~all / ~all | ✓ none / none | 5/5 | 37/40 | B (75) |
 
 ## Disagreements to review
 
