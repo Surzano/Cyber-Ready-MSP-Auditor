@@ -1,5 +1,5 @@
 {
-  "name": "cyber-ready-msp-auditor",
+  "name": "msp-auditor",
   "version": "0.1.0",
   "private": true,
   "scripts": {
@@ -30,7 +30,7 @@
     "typescript": "^5",
     "vitest": "^3.2.7"
   },
-  "description": "Cyber Ready Clinic \"Trust, But Verify\" MSP Security Auditor & Action Ticket Generator for nonprofits",
+  "description": "MSP Auditor: a security check-up and MSP ticket generator for nonprofits",
   "author": "Surzano R. Solomon",
   "engines": {
     "node": ">=20.9"

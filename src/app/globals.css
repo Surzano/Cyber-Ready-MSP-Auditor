@@ -1,12 +1,80 @@
 @import "tailwindcss";
 
 @theme {
-  --font-sans: var(--font-inter), ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
-  --font-mono: var(--font-jetbrains), ui-monospace, "SF Mono", Menlo, monospace;
-  --color-navy-950: #060d1f;
-  --color-navy-900: #0b1730;
-  --color-navy-800: #12234a;
-  --color-navy-700: #1b3366;
+  /* Headings use Bricolage Grotesque; body uses Atkinson Hyperlegible (designed by the
+     Braille Institute for low-vision readers). "serif" is the heading slot. */
+  --font-sans: var(--font-atkinson), ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-serif: var(--font-bricolage), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-plex-mono), ui-monospace, "SF Mono", Menlo, monospace;
+
+  /* Palette: white, near-black ink and a deep teal accent (named moss), with muted
+     status colors: moss = good / primary, ochre = caution, brick = problem, harbor = info. */
+  --color-paper: #ffffff;
+  --color-ink-950: #0a0a0a;
+  --color-ink-900: #171717;
+  --color-ink-800: #262626;
+  --color-ink-700: #404040;
+
+  --color-moss-50: #ecf8f6;
+  --color-moss-100: #cfeee9;
+  --color-moss-200: #a0ddd4;
+  --color-moss-300: #69c4b8;
+  --color-moss-400: #3ba699;
+  --color-moss-500: #22897d;
+  --color-moss-600: #1a6e65;
+  --color-moss-700: #175952;
+  --color-moss-800: #154843;
+  --color-moss-900: #133c38;
+  --color-moss-950: #072421;
+
+  --color-ochre-50: #fbf6e9;
+  --color-ochre-100: #f4e9c8;
+  --color-ochre-200: #e9d394;
+  --color-ochre-300: #ddb95f;
+  --color-ochre-400: #d2a23b;
+  --color-ochre-500: #b9862a;
+  --color-ochre-600: #9a6a21;
+  --color-ochre-700: #7b511e;
+  --color-ochre-800: #65421e;
+  --color-ochre-900: #56381d;
+  --color-ochre-950: #301d0c;
+
+  --color-brick-50: #fbf1ee;
+  --color-brick-100: #f6ded7;
+  --color-brick-200: #ecbcae;
+  --color-brick-300: #df927d;
+  --color-brick-400: #cf6a51;
+  --color-brick-500: #b94e35;
+  --color-brick-600: #9e3d28;
+  --color-brick-700: #833221;
+  --color-brick-800: #6c2b1e;
+  --color-brick-900: #5a271d;
+  --color-brick-950: #30110b;
+
+  --color-harbor-50: #eef3f6;
+  --color-harbor-100: #d9e4ea;
+  --color-harbor-200: #b5cad6;
+  --color-harbor-300: #8aa9bb;
+  --color-harbor-400: #62879e;
+  --color-harbor-500: #476c83;
+  --color-harbor-600: #38566b;
+  --color-harbor-700: #2f4758;
+  --color-harbor-800: #2a3c4a;
+  --color-harbor-900: #26343f;
+  --color-harbor-950: #172129;
+
+  /* Neutral grays replace Tailwind's warm stone scale. */
+  --color-stone-50: #fafafa;
+  --color-stone-100: #f5f5f5;
+  --color-stone-200: #e5e5e5;
+  --color-stone-300: #d4d4d4;
+  --color-stone-400: #a3a3a3;
+  --color-stone-500: #737373;
+  --color-stone-600: #525252;
+  --color-stone-700: #404040;
+  --color-stone-800: #262626;
+  --color-stone-900: #171717;
+  --color-stone-950: #0a0a0a;
 }
 
 :root {
@@ -14,23 +82,19 @@
 }
 
 html {
-  background: #f4f6fa;
+  --page-bg: #fbfaf7;
+  background: var(--page-bg);
 }
 
 body {
-  background: #f4f6fa;
-  color: #0f172a;
+  background: var(--page-bg);
+  color: #1f1d19;
   font-family: var(--font-sans);
-  font-feature-settings: "cv11", "ss01";
   -webkit-font-smoothing: antialiased;
 }
 
-/* Subtle grid texture behind the header — "security operations" feel without noise. */
-.bg-grid {
-  background-image:
-    linear-gradient(rgba(148, 163, 184, 0.07) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(148, 163, 184, 0.07) 1px, transparent 1px);
-  background-size: 28px 28px;
+::selection {
+  background: #e9d394;
 }
 
 .ticket-body {

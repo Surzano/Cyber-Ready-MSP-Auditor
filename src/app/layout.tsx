@@ -1,21 +1,23 @@
 import type { Metadata } from "next";
-import { Inter, JetBrains_Mono } from "next/font/google";
+import { Atkinson_Hyperlegible, Bricolage_Grotesque, IBM_Plex_Mono } from "next/font/google";
 import "./globals.css";
 
-const inter = Inter({ variable: "--font-inter", subsets: ["latin"] });
-const jetbrains = JetBrains_Mono({ variable: "--font-jetbrains", subsets: ["latin"] });
+const atkinson = Atkinson_Hyperlegible({ variable: "--font-atkinson", subsets: ["latin"], weight: ["400", "700"], style: ["normal", "italic"] });
+const bricolage = Bricolage_Grotesque({ variable: "--font-bricolage", subsets: ["latin"] });
+const plexMono = IBM_Plex_Mono({ variable: "--font-plex-mono", subsets: ["latin"], weight: ["400", "500"] });
 
 export const metadata: Metadata = {
-  title: "Trust, But Verify — Cyber Ready MSP Security Auditor",
+  title: "MSP Auditor — a security check-up for nonprofits and their MSPs",
   description:
-    "Privacy-first security auditor for nonprofits managed by an MSP: email spoofing & website header scan, identity & license hygiene audit, MSP report card, and copy-paste remediation tickets with a board-ready one-pager.",
+    "Check whether your MSP is actually protecting you: email spoofing and website header scan, identity and license audit, MSP report card, and ready-to-send help desk tickets with a one-page board briefing. Your user list never leaves your browser.",
   authors: [{ name: "Surzano R. Solomon" }],
 };
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="en">
-      <body className={`${inter.variable} ${jetbrains.variable} antialiased`}>{children}</body>
+    // Font variables go on <html> so the :root theme tokens in globals.css can resolve them.
+    <html lang="en" className={`${atkinson.variable} ${bricolage.variable} ${plexMono.variable}`}>
+      <body className="antialiased">{children}</body>
     </html>
   );
 }

@@ -1,12 +1,12 @@
-# 🛡️ "Trust, But Verify" — Cyber Ready MSP Security Auditor & Action Ticket Generator
+# MSP Auditor — a security check-up for nonprofits and their MSPs
 
 **A zero-setup, privacy-first security auditor that lets a nonprofit verify, in about 15 minutes, whether its Managed Service Provider is actually protecting it. It then writes the help desk tickets and the board briefing for them.**
 
-Built by **Surzano R. Solomon**, Cybersecurity Practitioner Intern, **Cyber Ready Clinic**.
+Built by **Surzano R. Solomon**.
 
-**▶ Live demo: [cyber-ready-msp-auditor.vercel.app](https://cyber-ready-msp-auditor.vercel.app/?demo=1)**
+**▶ Live demo: [msp-auditor.vercel.app](https://msp-auditor.vercel.app/?demo=1)**
 
-[![CI](https://github.com/Surzano/Cyber-Ready-MSP-Auditor/actions/workflows/ci.yml/badge.svg)](https://github.com/Surzano/Cyber-Ready-MSP-Auditor/actions/workflows/ci.yml)
+[![CI](https://github.com/Surzano/MSP-Auditor/actions/workflows/ci.yml/badge.svg)](https://github.com/Surzano/MSP-Auditor/actions/workflows/ci.yml)
 
 `Next.js 15 (App Router)` · `TypeScript` · `Tailwind CSS 4` · `Lucide` · `Node dns.promises` · `DNS-over-HTTPS` · `Vercel / GitHub Pages`
 
@@ -14,7 +14,7 @@ Built by **Surzano R. Solomon**, Cybersecurity Practitioner Intern, **Cyber Read
 
 ## 1. The Problem: The Nonprofit "MSP Blind Spot"
 
-Most small nonprofits outsource IT to a Managed Service Provider and assume that means *"cybersecurity is handled."* In practice, baseline MSP contracts are written for **uptime** (printers work, laptops get imaged, email flows), not for **security outcomes**. In clinic assessments, the same gaps come up again and again:
+Most small nonprofits outsource IT to a Managed Service Provider and assume that means *"cybersecurity is handled."* In practice, baseline MSP contracts are written for **uptime** (printers work, laptops get imaged, email flows), not for **security outcomes**. In assessments, the same gaps come up again and again:
 
 | What leadership assumes | What we usually find |
 |---|---|
@@ -76,20 +76,20 @@ The root problem is **vocabulary and leverage**. Executive Directors and boards 
 - The scan API is **stateless** and **passive**: one `GET /` per host, response bodies discarded, no port scanning, no crawling.
 - **SSRF hardening:** input must be a public hostname (IP literals, `localhost`, `.local`, `.internal` and similar are rejected). Every hostname, including each redirect hop, is resolved and refused if it points to private, loopback, link-local, CGNAT, or multicast space. Only ports 80/443 are used, with a maximum of 5 redirects.
 
-## 4. Cyber Ready Clinic Crosswalk: Practitioner 1 Impact Projects
+## 4. What Each Check Covers
 
-| Clinic Project ID | Impact Project | Where it lives | How it's implemented |
-|---|---|---|---|
-| `email-securi-15` | SPF/DKIM/DMARC Health Checker | Tab 1 | SPF `-all`/`~all`/`?all`/`+all` parsing, multiple-record permerror detection, **recursive RFC 7208 lookup counting (>10 = fail)**; DMARC `p=`, `pct=`, `sp=`, `rua=`; DKIM probing of 14 common selectors (TXT + CNAME) |
-| `website-atta-05` | Website Security Grader | Tab 1 | HTTPS reachability, `http→https` redirect, HSTS max-age, CSP (enforced vs report-only vs permissive), X-Frame-Options / `frame-ancestors`, X-Content-Type-Options, Referrer-Policy |
-| `identity-sec-17` | MFA Coverage Scanner | Tab 2 | Enabled accounts with MFA disabled → coverage %, named in Ticket #2 |
-| `identity-sec-21` | Stale Account Hunter | Tab 2 | Enabled accounts with no sign-in for >90 days, or never signed in |
-| `identity-sec-22` | Admin Sprawl Audit | Tab 2 | Global/Super Admin count (warn if >3 or >10% of members); **critical** if any admin lacks MFA |
-| `asset-manage-11` | License Waste Audit | Tab 2 | Paid licenses on disabled or stale accounts → monthly + **annual $ savings** |
-| `vendors-msps-08` | MSP Report Card (10-Question Grade) | Tab 3 | Yes = 10, Partial/Unsure = 4, No = 0 → A–F |
-| `vendors-msps-02` | Key Questions to Ask MSPs | Tabs 3 & 4 | A "What to ask your MSP" script per question, embedded in Ticket #3 |
-| `identity-sec-24` | Technical Identity Verification for Help Desks | Tab 3 (Q2) & Ticket #3 | Out-of-band caller verification requirement (push / callback + manager approval) |
-| `governance-r-17` | Board-Ready Cyber Risk One-Pager Generator | Tab 4 | Composite A–F grade, top 3 business risks, quick wins, license savings, print-optimized PDF |
+| Check | Where it lives | How it's implemented |
+|---|---|---|
+| SPF/DKIM/DMARC Health Checker | Tab 1 | SPF `-all`/`~all`/`?all`/`+all` parsing, multiple-record permerror detection, **recursive RFC 7208 lookup counting (>10 = fail)**; DMARC `p=`, `pct=`, `sp=`, `rua=`; DKIM probing of 14 common selectors (TXT + CNAME) |
+| Website Security Grader | Tab 1 | HTTPS reachability, `http→https` redirect, HSTS max-age, CSP (enforced vs report-only vs permissive), X-Frame-Options / `frame-ancestors`, X-Content-Type-Options, Referrer-Policy |
+| MFA Coverage Scanner | Tab 2 | Enabled accounts with MFA disabled → coverage %, named in Ticket #2 |
+| Stale Account Hunter | Tab 2 | Enabled accounts with no sign-in for >90 days, or never signed in |
+| Admin Sprawl Audit | Tab 2 | Global/Super Admin count (warn if >3 or >10% of members); **critical** if any admin lacks MFA |
+| License Waste Audit | Tab 2 | Paid licenses on disabled or stale accounts → monthly + **annual $ savings** |
+| MSP Report Card (10-Question Grade) | Tab 3 | Yes = 10, Partial/Unsure = 4, No = 0 → A–F |
+| Key Questions to Ask MSPs | Tabs 3 & 4 | A "What to ask your MSP" script per question, embedded in Ticket #3 |
+| Technical Identity Verification for Help Desks | Tab 3 (Q2) & Ticket #3 | Out-of-band caller verification requirement (push / callback + manager approval) |
+| Board-Ready Cyber Risk One-Pager Generator | Tab 4 | Composite A–F grade, top 3 business risks, quick wins, license savings, print-optimized PDF |
 
 ## 5. Scoring Methodology
 
@@ -106,8 +106,8 @@ Letter grades: **A+** ≥ 97 · **A** ≥ 90 · **B** ≥ 80 · **C** ≥ 70 · 
 Requires **Node.js 20.9+** (Node 22.18+/24 needed only for `npm run sample:csv`).
 
 ```bash
-git clone https://github.com/Surzano/Cyber-Ready-MSP-Auditor.git
-cd Cyber-Ready-MSP-Auditor
+git clone https://github.com/Surzano/MSP-Auditor.git
+cd MSP-Auditor
 npm install
 npm run dev            # http://localhost:3000   (try /?demo=1)
 ```
@@ -156,7 +156,7 @@ curl "http://localhost:3000/api/scan-domain?simulate=1"      # offline demo resu
 
 Run through the app's own analyzer, this header set earns **40/40 website points**. One trade-off, stated plainly: `script-src` includes `'unsafe-inline'` because the statically rendered App Router emits inline bootstrap scripts. A nonce-based CSP would require middleware and per-request rendering. The scanner reports this as an informational note rather than a failure. Note that a `*.vercel.app` subdomain has no SPF/DMARC of its own, so the email section only scores well on a custom domain you've configured.
 
-## 8. Data Protection Guardrails (for contributors and clinic practitioners)
+## 8. Data Protection Guardrails (for contributors and assessors)
 
 - `.gitignore` blocks **all `*.csv`** files except the two allow-listed synthetic files, plus `*-client-export.csv`, `*-audit-report.*`, spreadsheets, `.env*`, keys, `client-data/`, `exports/`, and `reports/`.
 - The repository ships only:
@@ -189,7 +189,7 @@ src/
 │  ├─ api/scan-domain/route.ts   # Node dns + fetch, timeouts, SSRF guard, simulate mode
 │  ├─ layout.tsx · page.tsx · globals.css (theme + @media print)
 ├─ components/
-│  ├─ AuditorApp.tsx             # header, ⚡ demo bar, tab shell, state
+│  ├─ AuditorApp.tsx             # header, step sidebar, privacy footer, state
 │  ├─ DomainScanner.tsx · IdentityAuditor.tsx · MspScorecard.tsx · ActionPlan.tsx · ui.tsx
 └─ lib/
    ├─ domain/analyze.ts          # SPF/DMARC/DKIM/header analysis + scoring (shared server/browser)
@@ -211,4 +211,4 @@ src/
 
 ---
 
-*Cyber Ready Clinic · Practitioner 1 Impact Projects · Built with care for the organizations that serve our communities.*
+*Built with care for the organizations that serve our communities.*

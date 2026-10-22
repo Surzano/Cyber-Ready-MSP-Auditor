@@ -1,4 +1,4 @@
-/** Module 4 — Deliverable Engine: MSP tickets + board one-pager content (governance-r-17). */
+/** Module 4 — Deliverable Engine: MSP tickets + board one-pager content. */
 import { RECOMMENDED_HEADERS } from "./domain/analyze";
 import { formatUsd, letterGrade } from "./grading";
 import type { IdentityAudit, AuditedUser } from "./identity";
@@ -47,7 +47,6 @@ export interface Ticket {
   id: 1 | 2 | 3;
   title: string;
   priority: "Critical" | "High" | "Medium";
-  clinicIds: string[];
   findingCount: number;
   subject: string;
   body: string;
@@ -69,7 +68,7 @@ function signature(ctx: AuditContext): string {
     "Thank you,",
     `${ctx.org.orgName} Leadership`,
     "",
-    `— Generated ${today()} with the Cyber Ready Clinic "Trust, But Verify" MSP Auditor`,
+    `— Generated ${today()} with MSP Auditor`,
   ].join("\n");
 }
 
@@ -109,8 +108,8 @@ function headerConfigSnippets(missing: (keyof typeof RECOMMENDED_HEADERS)[]): st
 
 function ticketEmail(ctx: AuditContext): Ticket {
   const d = ctx.domain;
-  const base = { id: 1 as const, title: "Email Authentication & Domain Hardening", clinicIds: ["email-securi-15", "website-atta-05"] };
-  if (!d) return { ...base, priority: "High", findingCount: 0, subject: "", body: "", ready: false, emptyReason: "Run the Domain & Website Scanner (Tab 1) to generate this ticket." };
+  const base = { id: 1 as const, title: "Email Authentication & Domain Hardening" };
+  if (!d) return { ...base, priority: "High", findingCount: 0, subject: "", body: "", ready: false, emptyReason: "Run the Domain & Website Scanner (step 1) to generate this ticket." };
   const failing = d.checks.filter((c) => c.status === "fail" || c.status === "warn");
   const email = failing.filter((c) => c.category === "email");
   const web = failing.filter((c) => c.category === "web");
@@ -165,37 +164,37 @@ function ticketEmail(ctx: AuditContext): Ticket {
 
 function ticketIdentity(ctx: AuditContext): Ticket {
   const a = ctx.identity;
-  const base = { id: 2 as const, title: "Identity Hygiene, MFA Enforcement & License Reclamation", clinicIds: ["identity-sec-17", "identity-sec-21", "identity-sec-22", "asset-manage-11"] };
-  if (!a) return { ...base, priority: "High", findingCount: 0, subject: "", body: "", ready: false, emptyReason: "Upload a user export or load the sample tenant in Tab 2 to generate this ticket." };
+  const base = { id: 2 as const, title: "Identity Hygiene, MFA Enforcement & License Reclamation" };
+  if (!a) return { ...base, priority: "High", findingCount: 0, subject: "", body: "", ready: false, emptyReason: "Upload a user export or load the sample tenant in step 2 to generate this ticket." };
   const lines: string[] = [];
   lines.push(header(ctx, `A review of our user directory export (${a.totalAccounts} accounts, MFA coverage ${a.mfaCoveragePct}%) identified the following identity risks. Please action them in priority order.`));
   let n = 1;
   if (a.adminsWithoutMfa.length) {
-    lines.push(`${n++}. [CRITICAL] Global Admin accounts WITHOUT MFA — enforce phishing-resistant MFA today (identity-sec-22):`);
+    lines.push(`${n++}. [CRITICAL] Global Admin accounts WITHOUT MFA — enforce phishing-resistant MFA today:`);
     a.adminsWithoutMfa.forEach((u) => lines.push(userLine(u)));
     lines.push("");
   }
   const nonAdminNoMfa = a.missingMfa.filter((u) => !u.isGlobalAdmin);
   if (nonAdminNoMfa.length) {
-    lines.push(`${n++}. Enforce MFA (Authenticator app or security key, not SMS) for these ${nonAdminNoMfa.length} enabled accounts (identity-sec-17):`);
+    lines.push(`${n++}. Enforce MFA (Authenticator app or security key, not SMS) for these ${nonAdminNoMfa.length} enabled accounts:`);
     nonAdminNoMfa.forEach((u) => lines.push(userLine(u)));
     lines.push("   Then enable Conditional Access / Security Defaults so no new account can be created without MFA.");
     lines.push("");
   }
   if (a.stale.length) {
-    lines.push(`${n++}. Disable sign-in, revoke sessions, and offboard these ${a.stale.length} dormant accounts (no sign-in for >90 days) (identity-sec-21):`);
+    lines.push(`${n++}. Disable sign-in, revoke sessions, and offboard these ${a.stale.length} dormant accounts (no sign-in for >90 days):`);
     a.stale.forEach((u) => lines.push(userLine(u, ` — last sign-in: ${u.daysSinceSignIn === null ? "never" : `${u.daysSinceSignIn} days ago`}`)));
     lines.push("   Convert to shared mailboxes or export mailbox data first if records retention requires it.");
     lines.push("");
   }
   if (a.adminSprawl !== "ok" || a.globalAdmins.length > 2) {
-    lines.push(`${n++}. Reduce Global/Super Admin accounts from ${a.globalAdmins.length} to 2 named break-glass/MSP admins (identity-sec-22):`);
+    lines.push(`${n++}. Reduce Global/Super Admin accounts from ${a.globalAdmins.length} to 2 named break-glass/MSP admins:`);
     a.globalAdmins.forEach((u) => lines.push(userLine(u, u.mfa === false ? " — MFA DISABLED" : "")));
     lines.push("   Assign least-privilege roles (User Admin, Billing Admin, Exchange Admin) to everyone else, and use separate admin accounts from daily-use mailboxes.");
     lines.push("");
   }
   if (a.wasted.length) {
-    lines.push(`${n++}. Remove paid licenses from these ${a.wasted.length} disabled/dormant accounts — saves ${formatUsd(a.monthlyWaste)}/month = ${formatUsd(a.annualWaste)}/year (asset-manage-11):`);
+    lines.push(`${n++}. Remove paid licenses from these ${a.wasted.length} disabled/dormant accounts — saves ${formatUsd(a.monthlyWaste)}/month = ${formatUsd(a.annualWaste)}/year:`);
     a.wasted.forEach((u) => lines.push(userLine(u, ` — ${u.license} (${formatUsd(u.monthlyCost)}/mo)`)));
     lines.push("   Please also reduce the license count on our next invoice accordingly.");
     lines.push("");
@@ -216,12 +215,12 @@ function ticketIdentity(ctx: AuditContext): Ticket {
 
 function ticketGovernance(ctx: AuditContext): Ticket {
   const s = ctx.scorecard;
-  const base = { id: 3 as const, title: "MSP Security Baseline & SLA Governance Alignment", clinicIds: ["vendors-msps-08", "vendors-msps-02", "identity-sec-24"] };
-  if (!s.answered) return { ...base, priority: "High", findingCount: 0, subject: "", body: "", ready: false, emptyReason: "Answer the 10-Question MSP Report Card (Tab 3) to generate this ticket." };
+  const base = { id: 3 as const, title: "MSP Security Baseline & SLA Governance Alignment" };
+  if (!s.answered) return { ...base, priority: "High", findingCount: 0, subject: "", body: "", ready: false, emptyReason: "Answer the 10-Question MSP Report Card (step 3) to generate this ticket." };
   const lines: string[] = [];
   lines.push(header(ctx, `We completed a 10-point MSP security accountability review (score ${s.score}/${s.answered * 10}). We would like to formally request the following services and evidence be added to our support agreement. Items marked "Unsure" mean we need written confirmation and evidence.`));
   s.gaps.forEach(({ q, answer }, i) => {
-    lines.push(`${i + 1}. ${q.title} [${answer === "no" ? "NOT IN PLACE" : "UNSURE / PARTIAL — evidence requested"}] (${q.clinicIds.join(", ")})`);
+    lines.push(`${i + 1}. ${q.title} [${answer === "no" ? "NOT IN PLACE" : "UNSURE / PARTIAL — evidence requested"}]`);
     lines.push(`   Request: ${q.action}`);
     lines.push(`   Question for your team: ${q.askMsp}`);
     lines.push("");

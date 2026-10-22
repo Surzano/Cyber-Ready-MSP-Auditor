@@ -1,6 +1,6 @@
 "use client";
 
-import { CheckCircle2, ClipboardCheck, Lock, Radar, RotateCcw, ShieldCheck, Ticket, Users } from "lucide-react";
+import { Lock, RotateCcw } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { simulatedScan } from "@/lib/domain/simulated";
 import { auditCsv, type IdentityAudit } from "@/lib/identity";
@@ -22,7 +22,7 @@ const BLANK_ORG: OrgProfile = {
   mspName: "Your MSP",
   mspEmail: "",
   domain: "",
-  preparedBy: "Cyber Ready Clinic",
+  preparedBy: "",
 };
 
 export function AuditorApp() {
@@ -72,144 +72,124 @@ export function AuditorApp() {
     setTab("domain");
   }
 
-  const tabs: { key: TabKey; n: number; label: string; Icon: typeof Radar; grade: string | null; done: boolean }[] = [
-    { key: "domain", n: 1, label: "Domain & Website", Icon: Radar, grade: domain?.grade ?? null, done: !!domain },
-    { key: "identity", n: 2, label: "Identity & Licenses", Icon: Users, grade: identity?.grade ?? null, done: !!identity },
-    { key: "msp", n: 3, label: "MSP Report Card", Icon: ClipboardCheck, grade: scorecard.answered === 10 ? scorecard.grade : null, done: scorecard.answered === 10 },
-    { key: "action", n: 4, label: "Action Plan & Tickets", Icon: Ticket, grade: composite.grade, done: composite.score !== null },
+  const steps: { key: TabKey; n: number; label: string; grade: string | null; done: boolean }[] = [
+    { key: "domain", n: 1, label: "Email & website", grade: domain?.grade ?? null, done: !!domain },
+    { key: "identity", n: 2, label: "Users & licenses", grade: identity?.grade ?? null, done: !!identity },
+    { key: "msp", n: 3, label: "Ask your MSP", grade: scorecard.answered === 10 ? scorecard.grade : null, done: scorecard.answered === 10 },
+    { key: "action", n: 4, label: "Tickets & board brief", grade: composite.grade, done: composite.score !== null },
   ];
 
   return (
     <div className="min-h-screen">
-      {/* Header */}
-      <header className="relative overflow-hidden bg-gradient-to-br from-navy-950 via-navy-900 to-navy-800 text-white print:hidden">
-        <div className="bg-grid absolute inset-0" aria-hidden />
-        <div className="absolute -top-24 right-0 h-64 w-64 rounded-full bg-emerald-500/10 blur-3xl" aria-hidden />
-        <div className="relative mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-4 px-6 py-5">
-          <div className="flex items-center gap-3.5">
-            <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-emerald-400/15 ring-1 ring-emerald-400/30">
-              <ShieldCheck className="h-6 w-6 text-emerald-300" />
-            </div>
-            <div>
-              <div className="text-[11px] font-semibold tracking-[0.2em] text-emerald-300/90 uppercase">Cyber Ready Clinic</div>
-              <h1 className="text-lg leading-tight font-bold tracking-tight sm:text-xl">
-                &ldquo;Trust, But Verify&rdquo; MSP Security Auditor
-                <span className="hidden font-normal text-slate-400 md:inline"> &amp; Action Ticket Generator</span>
-              </h1>
-            </div>
+      <header className="border-b border-stone-300 print:hidden">
+        <div className="mx-auto flex max-w-6xl flex-wrap items-baseline justify-between gap-x-6 gap-y-2 px-4 py-5 sm:px-6">
+          <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
+            <h1 className="font-serif text-2xl font-semibold text-ink-900 sm:text-3xl">MSP Auditor</h1>
+            <p className="text-sm text-stone-600">A security check-up for nonprofits and the IT company that runs their systems.</p>
           </div>
-          <div className="flex items-center gap-2 rounded-xl bg-emerald-400/10 px-3.5 py-2 ring-1 ring-emerald-400/30">
-            <Lock className="h-4 w-4 shrink-0 text-emerald-300" />
-            <div className="leading-tight">
-              <div className="text-xs font-bold text-emerald-200">Zero Data Retention</div>
-              <div className="text-[11px] text-emerald-100/70">100% Client-Side Processing for Internal Data</div>
-            </div>
-          </div>
+          <nav className="flex items-center gap-5 text-sm text-stone-600">
+            <a href="#privacy" className="underline decoration-stone-400 underline-offset-4 hover:text-ink-900">How your data is handled</a>
+          </nav>
         </div>
       </header>
 
-      {/* Demo bar */}
-      <div className="border-b border-amber-200/60 bg-gradient-to-r from-amber-50 via-white to-amber-50 print:hidden">
-        <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-3 px-6 py-3">
-          <div className="flex items-center gap-3 text-sm">
-            <button
-              onClick={loadFullDemo}
-              className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-amber-400 to-amber-300 px-4 py-2 text-sm font-bold text-navy-950 shadow-lg shadow-amber-500/25 transition hover:from-amber-300 hover:to-amber-200 focus-visible:ring-2 focus-visible:ring-amber-500 focus-visible:ring-offset-2 focus-visible:outline-none"
-            >
-              ⚡ Load Full Presentation Demo
-            </button>
-            <div className="hidden text-slate-600 sm:block">
-              {demoLoaded ? (
-                <span className="inline-flex items-center gap-1.5">
-                  <CheckCircle2 className="h-4 w-4 text-emerald-600" />
-                  <b className="text-slate-800">{SAMPLE_ORG.orgName}</b> — {SAMPLE_ORG.staffCount} Staff, Managed by {SAMPLE_ORG.mspName}
-                  <span className="hidden text-slate-400 xl:inline">· live scans still work in Tab 1</span>
-                </span>
-              ) : (
-                <>Nonprofit case study: <b className="text-slate-800">Hope Valley Community Services</b> — 24 staff, managed by Apex IT MSP</>
-              )}
+      <div className="mx-auto grid max-w-6xl gap-8 px-4 py-8 sm:px-6 lg:grid-cols-[220px_1fr] lg:gap-12">
+        <aside className="print:hidden lg:sticky lg:top-6 lg:self-start">
+          <ol className="grid grid-cols-2 gap-px overflow-hidden rounded-md border border-stone-300 bg-stone-300 lg:grid-cols-1" aria-label="Audit steps">
+            {steps.map((s) => (
+              <li key={s.key}>
+                <button
+                  onClick={() => setTab(s.key)}
+                  aria-current={tab === s.key ? "step" : undefined}
+                  className={cx("flex h-full w-full items-baseline gap-3 px-4 py-3 text-left transition", tab === s.key ? "bg-ink-900 text-paper" : "bg-paper text-ink-900 hover:bg-stone-100")}
+                >
+                  <span className={cx("font-serif text-2xl leading-none", tab === s.key ? "text-ochre-300" : "text-stone-400")}>{s.n}</span>
+                  <span className="min-w-0">
+                    <span className="block text-sm font-medium">{s.label}</span>
+                    <span className={cx("block text-xs", tab === s.key ? "text-stone-300" : "text-stone-500")}>
+                      {s.grade ? `Grade ${s.grade}` : s.done ? "Done" : "Not started"}
+                    </span>
+                  </span>
+                </button>
+              </li>
+            ))}
+          </ol>
+
+          {composite.score !== null && (
+            <div className="mt-4 flex items-center justify-between rounded-md border border-stone-300 bg-paper px-4 py-3">
+              <span className="text-sm text-stone-600">Overall</span>
+              <GradeBadge grade={composite.grade} size="sm" />
             </div>
-          </div>
-          <div className="flex items-center gap-4">
-            {composite.score !== null && (
-              <div className="flex items-center gap-2 text-xs font-semibold text-slate-600">
-                Overall readiness <GradeBadge grade={composite.grade} size="sm" />
-              </div>
+          )}
+
+          <div className="mt-6 hidden text-sm leading-relaxed text-stone-600 lg:block">
+            {demoLoaded ? (
+              <p>
+                Showing sample data for <b className="font-medium text-ink-900">{SAMPLE_ORG.orgName}</b>, a made-up {SAMPLE_ORG.staffCount}-person nonprofit. Live scans in step 1 still work.
+              </p>
+            ) : (
+              <p>No data handy? Walk through the whole thing with a made-up 24-person nonprofit.</p>
             )}
-            <button onClick={resetAll} className="inline-flex items-center gap-1 text-xs font-semibold text-slate-500 hover:text-slate-800">
-              <RotateCcw className="h-3.5 w-3.5" /> Reset
+          </div>
+          <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-2">
+            {!demoLoaded && (
+              <button onClick={loadFullDemo} className="text-sm font-medium text-moss-700 underline decoration-moss-300 underline-offset-4 hover:text-moss-900">
+                Load sample data
+              </button>
+            )}
+            <button onClick={resetAll} className="inline-flex items-center gap-1 text-sm text-stone-500 hover:text-ink-900">
+              <RotateCcw className="h-3.5 w-3.5" /> Start over
             </button>
           </div>
-        </div>
+        </aside>
+
+        <main className="min-w-0">
+          {/* Keep every module mounted so in-progress form state survives step switches. */}
+          <div hidden={tab !== "domain"}>
+            <DomainScanner
+              result={domain}
+              onResult={(r) => {
+                setDomain(r);
+                setOrg((o) => ({ ...o, domain: r.domain }));
+              }}
+            />
+          </div>
+          <div hidden={tab !== "identity"}>
+            <IdentityAuditor audit={identity} onAudit={setIdentity} onLoadSample={loadSampleTenant} />
+          </div>
+          <div hidden={tab !== "msp"}>
+            <MspScorecard
+              answers={answers}
+              result={scorecard}
+              mspName={org.mspName}
+              onChange={(id: string, a: Answer) => setAnswers((prev) => ({ ...prev, [id]: a }))}
+              onReset={() => setAnswers({})}
+            />
+          </div>
+          <div hidden={tab !== "action"}>
+            <ActionPlan ctx={ctx} onOrgChange={setOrg} view={actionView} onViewChange={setActionView} />
+          </div>
+        </main>
       </div>
 
-      {/* Tabs */}
-      <nav className="sticky top-0 z-20 border-b border-slate-200 bg-white/90 backdrop-blur print:hidden" aria-label="Audit modules">
-        <div className="mx-auto flex max-w-7xl gap-1 overflow-x-auto px-6">
-          {tabs.map((t) => (
-            <button
-              key={t.key}
-              onClick={() => setTab(t.key)}
-              aria-current={tab === t.key ? "page" : undefined}
-              className={cx(
-                "group flex shrink-0 items-center gap-2.5 border-b-2 px-3 py-3.5 text-sm font-semibold transition",
-                tab === t.key ? "border-emerald-600 text-slate-900" : "border-transparent text-slate-500 hover:text-slate-800",
-              )}
-            >
-              <span
-                className={cx(
-                  "flex h-6 w-6 items-center justify-center rounded-full text-[11px] font-bold",
-                  t.done ? "bg-emerald-600 text-white" : tab === t.key ? "bg-navy-900 text-white" : "bg-slate-200 text-slate-600",
-                )}
-              >
-                {t.done ? <CheckCircle2 className="h-3.5 w-3.5" /> : t.n}
-              </span>
-              <t.Icon className="h-4 w-4 opacity-70" />
-              {t.label}
-              {t.grade && (
-                <span className={cx("rounded-md px-1.5 py-0.5 text-[11px] font-bold", t.grade.startsWith("A") || t.grade === "B" ? "bg-emerald-50 text-emerald-700" : t.grade === "F" ? "bg-rose-50 text-rose-700" : "bg-amber-50 text-amber-800")}>
-                  {t.grade}
-                </span>
-              )}
-            </button>
-          ))}
-        </div>
-      </nav>
-
-      <main className="mx-auto max-w-7xl px-6 py-8">
-        {/* Keep every module mounted so in-progress form state survives tab switches. */}
-        <div hidden={tab !== "domain"}>
-          <DomainScanner
-            result={domain}
-            onResult={(r) => {
-              setDomain(r);
-              setOrg((o) => ({ ...o, domain: r.domain }));
-            }}
-          />
-        </div>
-        <div hidden={tab !== "identity"}>
-          <IdentityAuditor audit={identity} onAudit={setIdentity} onLoadSample={loadSampleTenant} />
-        </div>
-        <div hidden={tab !== "msp"}>
-          <MspScorecard
-            answers={answers}
-            result={scorecard}
-            mspName={org.mspName}
-            onChange={(id: string, a: Answer) => setAnswers((prev) => ({ ...prev, [id]: a }))}
-            onReset={() => setAnswers({})}
-          />
-        </div>
-        <div hidden={tab !== "action"}>
-          <ActionPlan ctx={ctx} onOrgChange={setOrg} view={actionView} onViewChange={setActionView} />
-        </div>
-      </main>
-
-      <footer className="border-t border-slate-200 bg-white print:hidden">
-        <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-2 px-6 py-5 text-xs text-slate-500">
+      <footer id="privacy" className="border-t border-stone-300 print:hidden">
+        <div className="mx-auto grid max-w-6xl gap-8 px-4 py-10 text-sm leading-relaxed text-stone-600 sm:px-6 md:grid-cols-[1fr_1fr]">
           <div>
-            Built by <b className="text-slate-700">Surzano R. Solomon</b> · Cybersecurity Practitioner Intern, Cyber Ready Clinic
+            <h2 className="flex items-center gap-2 font-serif text-xl font-semibold text-ink-900">
+              <Lock className="h-4 w-4" /> How your data is handled
+            </h2>
+            <ul className="mt-3 list-disc space-y-1.5 pl-5">
+              <li>Your user list and your report card answers stay in this browser tab. They are never uploaded, stored, or logged. Refreshing the page erases them.</li>
+              <li>The only thing that leaves your browser is the domain name you type in step 1. It is used to look up public DNS records and public website headers, the same information any email server or web browser can see.</li>
+              <li>No accounts, no cookies, no analytics.</li>
+            </ul>
           </div>
-          <div>Passive checks only · No data stored · Demo data is synthetic</div>
+          <div>
+            <h2 className="font-serif text-xl font-semibold text-ink-900">About</h2>
+            <p className="mt-3">
+              Built by Surzano R. Solomon. These are passive, point-in-time checks, not a penetration test. All sample data is made up.
+            </p>
+          </div>
         </div>
       </footer>
     </div>

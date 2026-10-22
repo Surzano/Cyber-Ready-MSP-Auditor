@@ -21,7 +21,7 @@ export const SAMPLE_ORG: OrgProfile = {
   mspName: "Apex IT MSP",
   mspEmail: "helpdesk@apex-it-msp.example",
   domain: "hopevalleycs.org",
-  preparedBy: "Surzano R. Solomon, Cyber Ready Clinic",
+  preparedBy: "Surzano R. Solomon",
 };
 
 export const CSV_HEADERS = [

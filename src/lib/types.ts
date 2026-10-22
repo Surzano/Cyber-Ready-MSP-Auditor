@@ -5,7 +5,6 @@ export type ScanMode = "live-server" | "live-doh" | "simulated";
 export interface CheckResult {
   id: "spf" | "dmarc" | "dkim" | "https" | "hsts" | "csp" | "xfo" | "xcto" | "referrer";
   category: "email" | "web";
-  clinicId: string;
   label: string;
   status: Status;
   points: number;

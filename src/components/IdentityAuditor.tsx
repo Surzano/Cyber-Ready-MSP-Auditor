@@ -1,24 +1,44 @@
 "use client";
 
-import { Crown, Download, FileSpreadsheet, FileUp, KeyRound, Lock, PiggyBank, Search, ShieldOff, UserX, Users } from "lucide-react";
+import { Crown, Download, FileSpreadsheet, FileUp, KeyRound, PiggyBank, Search, ShieldOff, UserX, Users } from "lucide-react";
 import { useMemo, useRef, useState } from "react";
 import { downloadText } from "@/lib/download";
 import { formatUsd } from "@/lib/grading";
 import { STALE_DAYS, auditCsv, type AuditedUser, type FlagCode, type IdentityAudit } from "@/lib/identity";
 import { buildBlankTemplateCsv, buildSampleCsv } from "@/lib/sampleData";
-import { Button, Card, ClinicBadge, EmptyState, GradeBadge, Kpi, SectionTitle, cx } from "./ui";
+import { Button, Card, EmptyState, GradeBadge, Kpi, SectionTitle, cx } from "./ui";
 
 type Filter = "flagged" | "all" | "mfa" | "stale" | "admin" | "waste";
 
 const FLAG_STYLE: Record<FlagCode, { label: string; cls: string }> = {
-  ADMIN_NO_MFA: { label: "Admin · No MFA", cls: "bg-rose-600 text-white ring-rose-600" },
-  NO_MFA: { label: "No MFA", cls: "bg-rose-50 text-rose-700 ring-rose-200" },
-  STALE: { label: `Stale >${STALE_DAYS}d`, cls: "bg-amber-50 text-amber-800 ring-amber-200" },
+  ADMIN_NO_MFA: { label: "Admin · No MFA", cls: "bg-brick-600 text-white ring-brick-600" },
+  NO_MFA: { label: "No MFA", cls: "bg-brick-50 text-brick-700 ring-brick-200" },
+  STALE: { label: `Stale >${STALE_DAYS}d`, cls: "bg-ochre-50 text-ochre-800 ring-ochre-200" },
   LICENSE_WASTE: { label: "License waste", cls: "bg-violet-50 text-violet-700 ring-violet-200" },
-  GLOBAL_ADMIN: { label: "Global Admin", cls: "bg-slate-100 text-slate-700 ring-slate-300" },
+  GLOBAL_ADMIN: { label: "Global Admin", cls: "bg-stone-100 text-stone-700 ring-stone-300" },
 };
 
-export function IdentityAuditor({ audit, onAudit, onLoadSample }: { audit: IdentityAudit | null; onAudit: (a: IdentityAudit) => void; onLoadSample: () => void }) {
+// What each column is used for. Everything else in an export is ignored, so people can delete it first.
+const COLUMN_GUIDE: { column: string; usedFor: string; need: "Required" | "Recommended" | "Optional" }[] = [
+  { column: "Email or name", usedFor: "Telling accounts apart and naming them in the ticket", need: "Required" },
+  { column: "MFA status", usedFor: "MFA coverage", need: "Recommended" },
+  { column: "Last sign-in", usedFor: "Finding stale accounts", need: "Recommended" },
+  { column: "Role / admin roles", usedFor: "Counting Global Admins", need: "Recommended" },
+  { column: "Enabled / blocked", usedFor: "Skipping accounts that are already off", need: "Optional" },
+  { column: "Licenses", usedFor: "License waste", need: "Optional" },
+  { column: "Monthly cost", usedFor: "Dollar savings (otherwise $22/mo is assumed)", need: "Optional" },
+  { column: "Account type", usedFor: "Leaving guests and shared mailboxes out of staff counts", need: "Optional" },
+];
+
+export function IdentityAuditor({
+  audit,
+  onAudit,
+  onLoadSample,
+}: {
+  audit: IdentityAudit | null;
+  onAudit: (a: IdentityAudit) => void;
+  onLoadSample: () => void;
+}) {
   const [dragging, setDragging] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [filter, setFilter] = useState<Filter>("flagged");
@@ -78,61 +98,90 @@ export function IdentityAuditor({ audit, onAudit, onLoadSample }: { audit: Ident
   return (
     <div className="space-y-6">
       <SectionTitle
-        icon={<Users className="h-5 w-5" />}
-        title="Identity & License Hygiene Auditor"
-        subtitle="Drop in a user export from Microsoft 365 / Entra ID or Google Workspace. We flag accounts without MFA, dormant ex-staff, admin sprawl, and the dollars spent on licenses nobody uses."
-        ids={["identity-sec-17", "identity-sec-21", "identity-sec-22", "asset-manage-11"]}
+        step={2}
+        title="Users & licenses"
+        subtitle="Add a user export from Microsoft 365 (Entra ID) or Google Workspace. You'll see who has no MFA, which ex-staff accounts are still on, how many people hold admin rights, and what unused licenses cost you."
         right={
           <div className="flex flex-wrap gap-2">
             <Button variant="secondary" onClick={() => downloadText("sample-hope-valley-users.csv", buildSampleCsv())}>
-              <Download className="h-4 w-4" /> Download Sample CSV
+              <Download className="h-4 w-4" /> Sample CSV
             </Button>
             <Button variant="ghost" onClick={() => downloadText("blank-user-import-template.csv", buildBlankTemplateCsv())}>
-              <FileSpreadsheet className="h-4 w-4" /> Blank Template
+              <FileSpreadsheet className="h-4 w-4" /> Blank template
             </Button>
           </div>
         }
       />
 
-      <div className="grid gap-4 lg:grid-cols-[1fr_auto]">
-        <div
-          onDragOver={(e) => {
-            e.preventDefault();
-            setDragging(true);
-          }}
-          onDragLeave={() => setDragging(false)}
-          onDrop={(e) => {
-            e.preventDefault();
-            setDragging(false);
-            handleFile(e.dataTransfer.files[0]);
-          }}
-          onClick={() => fileInput.current?.click()}
-          onKeyDown={(e) => (e.key === "Enter" || e.key === " ") && fileInput.current?.click()}
-          role="button"
-          tabIndex={0}
-          className={cx(
-            "flex cursor-pointer flex-col items-center justify-center gap-2 rounded-2xl border-2 border-dashed px-6 py-8 text-center transition",
-            dragging ? "border-emerald-500 bg-emerald-50" : "border-slate-300 bg-white hover:border-emerald-400 hover:bg-emerald-50/40",
-          )}
-        >
-          <FileUp className={cx("h-8 w-8", dragging ? "text-emerald-600" : "text-slate-400")} />
-          <div className="text-sm font-semibold text-slate-800">Drag & drop a user export CSV, or click to browse</div>
-          <div className="text-xs text-slate-500">Columns auto-detected: displayName/Name · userPrincipalName/Email · accountEnabled/Status · mfaStatus/2SV Enrolled · lastSignInDateTime · role · licenses</div>
-          <div className="mt-1 inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-2.5 py-1 text-[11px] font-semibold text-emerald-700 ring-1 ring-emerald-200">
-            <Lock className="h-3 w-3" /> Parsed in your browser memory only — never uploaded
-          </div>
-          <input ref={fileInput} type="file" accept=".csv,text/csv" className="hidden" onChange={(e) => handleFile(e.target.files?.[0] ?? undefined)} />
-        </div>
-        <Card className="flex flex-col justify-center gap-3 p-5 lg:w-80">
-          <div className="text-sm font-semibold text-slate-800">Presenting? Use the sample tenant.</div>
-          <p className="text-xs text-slate-500">22 synthetic accounts for a 24-person nonprofit managed by an outside MSP.</p>
-          <Button variant="dark" onClick={onLoadSample}>
-            <Users className="h-4 w-4" /> Load Sample Nonprofit Tenant (Hope Valley Community Services)
-          </Button>
-        </Card>
+      <div className="grid gap-6 md:grid-cols-2">
+        <section>
+          <h3 className="font-serif text-xl font-semibold text-ink-900">Where your file goes</h3>
+          <p className="mt-2 text-sm leading-relaxed text-stone-700">
+            Nowhere. The file is read by code running in this browser tab and kept in memory. Nothing is uploaded, saved or logged, and refreshing the page erases it.
+          </p>
+          <p className="mt-3 text-sm font-medium text-ink-900">You don&apos;t have to take my word for it:</p>
+          <ul className="mt-1 list-disc space-y-1 pl-5 text-sm leading-relaxed text-stone-700">
+            <li>
+              Open your browser&apos;s developer tools, go to the <b className="font-medium">Network</b> tab, then add the file. No request is sent.
+            </li>
+            <li>Or load this page, turn off Wi-Fi, then add the file. The audit still runs.</li>
+          </ul>
+        </section>
+        <section>
+          <h3 className="font-serif text-xl font-semibold text-ink-900">What it actually needs</h3>
+          <table className="mt-2 w-full text-left text-sm">
+            <tbody className="divide-y divide-stone-200">
+              {COLUMN_GUIDE.map((c) => (
+                <tr key={c.column}>
+                  <td className="py-1.5 pr-3 font-medium text-ink-900">{c.column}</td>
+                  <td className="py-1.5 pr-3 text-stone-600">{c.usedFor}</td>
+                  <td className={cx("py-1.5 text-right text-xs whitespace-nowrap", c.need === "Required" ? "font-semibold text-brick-700" : "text-stone-500")}>{c.need}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+          <p className="mt-3 text-sm leading-relaxed text-stone-700">
+            Delete every other column (phone, address, department, manager) before you add the file. You can also swap real names and emails for placeholders like{" "}
+            <code className="font-mono text-[13px]">user01@yourorg.org</code> and match them up yourself afterward. If you do, keep the account type column, or leave shared mailboxes like{" "}
+            <code className="font-mono text-[13px]">info@</code> as they are, so they aren&apos;t counted as people.
+          </p>
+        </section>
       </div>
 
-      {error && <div className="rounded-xl border border-rose-200 bg-rose-50 p-4 text-sm text-rose-800">{error}</div>}
+      <div
+        onDragOver={(e) => {
+          e.preventDefault();
+          setDragging(true);
+        }}
+        onDragLeave={() => setDragging(false)}
+        onDrop={(e) => {
+          e.preventDefault();
+          setDragging(false);
+          handleFile(e.dataTransfer.files[0]);
+        }}
+        onClick={() => fileInput.current?.click()}
+        onKeyDown={(e) => (e.key === "Enter" || e.key === " ") && fileInput.current?.click()}
+        role="button"
+        tabIndex={0}
+        className={cx(
+          "flex cursor-pointer flex-col items-center justify-center gap-2 rounded-md border-2 border-dashed px-6 py-8 text-center transition",
+          dragging ? "border-moss-600 bg-moss-50" : "border-stone-400 bg-paper hover:border-moss-500 hover:bg-moss-50/40",
+        )}
+      >
+        <FileUp className={cx("h-7 w-7", dragging ? "text-moss-700" : "text-stone-400")} />
+        <div className="text-sm font-medium text-ink-900">Drop a user export (.csv) here, or click to choose one</div>
+        <div className="text-xs text-stone-500">Stays in this tab. Microsoft 365 and Google Workspace column names are recognized automatically.</div>
+        <input ref={fileInput} type="file" accept=".csv,text/csv" className="hidden" onChange={(e) => handleFile(e.target.files?.[0] ?? undefined)} />
+      </div>
+      <p className="-mt-3 text-sm text-stone-600">
+        Just looking?{" "}
+        <button onClick={onLoadSample} className="font-medium text-moss-700 underline decoration-moss-300 underline-offset-4 hover:text-moss-900">
+          Use the sample nonprofit
+        </button>{" "}
+        (22 made-up accounts).
+      </p>
+
+      {error && <div className="rounded-md border border-brick-200 bg-brick-50 p-4 text-sm text-brick-800">{error}</div>}
 
       {!audit ? (
         <EmptyState icon={<Users className="h-6 w-6" />} title="No user directory loaded yet">
@@ -147,7 +196,6 @@ export function IdentityAuditor({ audit, onAudit, onLoadSample }: { audit: Ident
               sub={`${audit.missingMfa.length} enabled account${audit.missingMfa.length === 1 ? "" : "s"} without MFA`}
               tone={audit.mfaCoveragePct === 100 ? "good" : audit.mfaCoveragePct >= 90 ? "ok" : "bad"}
               icon={<KeyRound className="h-4 w-4" />}
-              id="identity-sec-17"
             />
             <Kpi
               label="Stale Accounts Found"
@@ -155,7 +203,6 @@ export function IdentityAuditor({ audit, onAudit, onLoadSample }: { audit: Ident
               sub={`Enabled, no sign-in for >${STALE_DAYS} days`}
               tone={audit.stale.length === 0 ? "good" : audit.stale.length <= 1 ? "ok" : "bad"}
               icon={<UserX className="h-4 w-4" />}
-              id="identity-sec-21"
             />
             <Kpi
               label="Global Admin Count"
@@ -163,7 +210,6 @@ export function IdentityAuditor({ audit, onAudit, onLoadSample }: { audit: Ident
               sub={audit.adminsWithoutMfa.length ? `${audit.adminsWithoutMfa.length} admin without MFA — CRITICAL` : audit.adminSprawl === "warning" ? "Admin sprawl: recommended ≤ 3" : "Within recommended range"}
               tone={audit.adminSprawl === "critical" ? "bad" : audit.adminSprawl === "warning" ? "ok" : "good"}
               icon={<Crown className="h-4 w-4" />}
-              id="identity-sec-22"
             />
             <Kpi
               label="Annual License Savings"
@@ -171,19 +217,18 @@ export function IdentityAuditor({ audit, onAudit, onLoadSample }: { audit: Ident
               sub={`${formatUsd(audit.monthlyWaste)}/mo across ${audit.wasted.length} inactive account${audit.wasted.length === 1 ? "" : "s"}`}
               tone={audit.annualWaste === 0 ? "good" : "ok"}
               icon={<PiggyBank className="h-4 w-4" />}
-              id="asset-manage-11"
             />
             <Card className="flex items-center justify-center p-5 sm:col-span-2 xl:col-span-1">
               <div className="text-center">
-                <div className="mb-2 text-xs font-semibold tracking-wide text-slate-500 uppercase">Identity Grade</div>
+                <div className="mb-2 text-xs font-semibold tracking-wide text-stone-500 uppercase">Identity Grade</div>
                 <GradeBadge grade={audit.grade} size="lg" score={audit.score} />
               </div>
             </Card>
           </div>
 
           {audit.adminsWithoutMfa.length > 0 && (
-            <div className="flex items-start gap-3 rounded-xl border border-rose-300 bg-rose-50 p-4 text-sm text-rose-900">
-              <ShieldOff className="mt-0.5 h-5 w-5 shrink-0 text-rose-600" />
+            <div className="flex items-start gap-3 rounded-md border border-brick-300 bg-brick-50 p-4 text-sm text-brick-900">
+              <ShieldOff className="mt-0.5 h-5 w-5 shrink-0 text-brick-600" />
               <div>
                 <b>Critical:</b> {audit.adminsWithoutMfa.map((u) => `${u.displayName} (${u.upn})`).join(", ")} {audit.adminsWithoutMfa.length > 1 ? "hold" : "holds"} Global Admin rights with MFA disabled. One stolen password gives an attacker full control of every mailbox and file in the organization.
               </div>
@@ -191,15 +236,15 @@ export function IdentityAuditor({ audit, onAudit, onLoadSample }: { audit: Ident
           )}
 
           <Card className="overflow-hidden">
-            <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 px-5 py-3">
+            <div className="flex flex-wrap items-center justify-between gap-3 border-b border-stone-100 px-5 py-3">
               <div className="flex flex-wrap gap-1.5">
                 {filters.map((f) => (
                   <button
                     key={f.key}
                     onClick={() => setFilter(f.key)}
                     className={cx(
-                      "rounded-lg px-3 py-1.5 text-xs font-semibold transition",
-                      filter === f.key ? "bg-navy-900 text-white" : "bg-slate-100 text-slate-600 hover:bg-slate-200",
+                      "rounded px-3 py-1.5 text-xs font-semibold transition",
+                      filter === f.key ? "bg-ink-900 text-white" : "bg-stone-100 text-stone-600 hover:bg-stone-200",
                     )}
                   >
                     {f.label} <span className="ml-1 tabular-nums opacity-70">{f.count}</span>
@@ -208,18 +253,18 @@ export function IdentityAuditor({ audit, onAudit, onLoadSample }: { audit: Ident
               </div>
               <label className="relative">
                 <span className="sr-only">Search accounts</span>
-                <Search className="pointer-events-none absolute top-1/2 left-2.5 h-3.5 w-3.5 -translate-y-1/2 text-slate-400" />
+                <Search className="pointer-events-none absolute top-1/2 left-2.5 h-3.5 w-3.5 -translate-y-1/2 text-stone-400" />
                 <input
                   value={query}
                   onChange={(e) => setQuery(e.target.value)}
                   placeholder="Search name, email, role…"
-                  className="w-56 rounded-lg border border-slate-200 py-1.5 pr-3 pl-8 text-xs outline-none focus:border-emerald-500"
+                  className="w-56 rounded border border-stone-200 py-1.5 pr-3 pl-8 text-xs outline-none focus:border-moss-500"
                 />
               </label>
             </div>
             <div className="overflow-x-auto">
               <table className="w-full min-w-[860px] text-left text-sm">
-                <thead className="bg-slate-50 text-[11px] font-semibold tracking-wide text-slate-500 uppercase">
+                <thead className="bg-stone-50 text-[11px] font-semibold tracking-wide text-stone-500 uppercase">
                   <tr>
                     <th className="px-5 py-2.5">Account</th>
                     <th className="px-3 py-2.5">Status</th>
@@ -230,32 +275,32 @@ export function IdentityAuditor({ audit, onAudit, onLoadSample }: { audit: Ident
                     <th className="px-5 py-2.5">Findings</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-100">
+                <tbody className="divide-y divide-stone-100">
                   {rows.map((u) => (
-                    <tr key={u.upn + u.displayName} className={cx(u.severity === "critical" ? "bg-rose-50/60" : u.severity === "warning" ? "bg-amber-50/50" : "")}>
+                    <tr key={u.upn + u.displayName} className={cx(u.severity === "critical" ? "bg-brick-50/60" : u.severity === "warning" ? "bg-ochre-50/50" : "")}>
                       <td className="px-5 py-2.5">
-                        <div className="font-semibold text-slate-900">{u.displayName}</div>
-                        <div className="text-xs text-slate-500">
+                        <div className="font-semibold text-stone-900">{u.displayName}</div>
+                        <div className="text-xs text-stone-500">
                           {u.upn}
                           {u.title && <> · {u.title}</>}
                         </div>
                       </td>
                       <td className="px-3 py-2.5">
-                        <span className={cx("text-xs font-semibold", u.enabled ? "text-slate-700" : "text-slate-400")}>{u.enabled ? "Enabled" : "Disabled"}</span>
-                        {u.accountType !== "Member" && <div className="text-[11px] text-slate-400">{u.accountType}</div>}
+                        <span className={cx("text-xs font-semibold", u.enabled ? "text-stone-700" : "text-stone-400")}>{u.enabled ? "Enabled" : "Disabled"}</span>
+                        {u.accountType !== "Member" && <div className="text-[11px] text-stone-400">{u.accountType}</div>}
                       </td>
                       <td className="px-3 py-2.5">
-                        <span className={cx("text-xs font-semibold", u.mfa === false ? "text-rose-600" : u.mfa ? "text-emerald-700" : "text-slate-400")}>
+                        <span className={cx("text-xs font-semibold", u.mfa === false ? "text-brick-600" : u.mfa ? "text-moss-700" : "text-stone-400")}>
                           {u.mfa === null ? "Unknown" : u.mfa ? "On" : "Off"}
                         </span>
                       </td>
-                      <td className={cx("px-3 py-2.5 text-xs tabular-nums", u.stale ? "font-semibold text-amber-700" : "text-slate-600")}>
+                      <td className={cx("px-3 py-2.5 text-xs tabular-nums", u.stale ? "font-semibold text-ochre-700" : "text-stone-600")}>
                         {u.lastSignIn ? `${u.lastSignIn.toLocaleDateString()} (${u.daysSinceSignIn}d)` : "Never"}
                       </td>
-                      <td className={cx("px-3 py-2.5 text-xs", u.isGlobalAdmin ? "font-semibold text-slate-900" : "text-slate-600")}>{u.role}</td>
-                      <td className="px-3 py-2.5 text-xs text-slate-600">
+                      <td className={cx("px-3 py-2.5 text-xs", u.isGlobalAdmin ? "font-semibold text-stone-900" : "text-stone-600")}>{u.role}</td>
+                      <td className="px-3 py-2.5 text-xs text-stone-600">
                         {u.license}
-                        {u.isPaid && <span className="ml-1 text-slate-400 tabular-nums">({formatUsd(u.monthlyCost)}/mo)</span>}
+                        {u.isPaid && <span className="ml-1 text-stone-400 tabular-nums">({formatUsd(u.monthlyCost)}/mo)</span>}
                       </td>
                       <td className="px-5 py-2.5">
                         <div className="flex flex-wrap gap-1">
@@ -264,14 +309,14 @@ export function IdentityAuditor({ audit, onAudit, onLoadSample }: { audit: Ident
                               {FLAG_STYLE[f].label}
                             </span>
                           ))}
-                          {u.flags.length === 0 && <span className="text-xs text-emerald-600">✓ Clean</span>}
+                          {u.flags.length === 0 && <span className="text-xs text-moss-600">✓ Clean</span>}
                         </div>
                       </td>
                     </tr>
                   ))}
                   {rows.length === 0 && (
                     <tr>
-                      <td colSpan={7} className="px-5 py-8 text-center text-sm text-slate-500">
+                      <td colSpan={7} className="px-5 py-8 text-center text-sm text-stone-500">
                         No accounts match this filter.
                       </td>
                     </tr>
@@ -279,21 +324,15 @@ export function IdentityAuditor({ audit, onAudit, onLoadSample }: { audit: Ident
                 </tbody>
               </table>
             </div>
-            <div className="flex flex-wrap items-center justify-between gap-2 border-t border-slate-100 bg-slate-50/60 px-5 py-2.5 text-xs text-slate-500">
+            <div className="flex flex-wrap items-center justify-between gap-2 border-t border-stone-100 bg-stone-50/60 px-5 py-2.5 text-xs text-stone-500">
               <span>
-                Source: <b className="text-slate-700">{audit.source}</b> · {audit.totalAccounts} accounts · {audit.enabledAccounts} enabled
-              </span>
-              <span className="flex gap-1.5">
-                <ClinicBadge id="identity-sec-17" />
-                <ClinicBadge id="identity-sec-21" />
-                <ClinicBadge id="identity-sec-22" />
-                <ClinicBadge id="asset-manage-11" />
+                Source: <b className="text-stone-700">{audit.source}</b> · {audit.totalAccounts} accounts · {audit.enabledAccounts} enabled
               </span>
             </div>
           </Card>
 
           {audit.warnings.length > 0 && (
-            <ul className="space-y-1 rounded-xl bg-slate-100 px-4 py-3 text-xs text-slate-600">
+            <ul className="space-y-1 rounded-md bg-stone-100 px-4 py-3 text-xs text-stone-600">
               {audit.warnings.map((w) => (
                 <li key={w}>• {w}</li>
               ))}

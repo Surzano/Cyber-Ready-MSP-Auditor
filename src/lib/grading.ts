@@ -16,11 +16,11 @@ export function gradeTone(grade: string | null | undefined): Tone {
   return "bad";
 }
 
-export const toneClasses: Record<Tone, { text: string; bg: string; ring: string; solid: string }> = {
-  good: { text: "text-emerald-700", bg: "bg-emerald-50", ring: "ring-emerald-200", solid: "bg-emerald-600" },
-  ok: { text: "text-amber-700", bg: "bg-amber-50", ring: "ring-amber-200", solid: "bg-amber-500" },
-  bad: { text: "text-rose-700", bg: "bg-rose-50", ring: "ring-rose-200", solid: "bg-rose-600" },
-  none: { text: "text-slate-500", bg: "bg-slate-50", ring: "ring-slate-200", solid: "bg-slate-400" },
+export const toneClasses: Record<Tone, { text: string; bg: string; ring: string; border: string; borderLeft: string; solid: string }> = {
+  good: { text: "text-moss-700", bg: "bg-moss-50", ring: "ring-moss-200", border: "border-moss-600", borderLeft: "border-l-moss-600", solid: "bg-moss-600" },
+  ok: { text: "text-ochre-700", bg: "bg-ochre-50", ring: "ring-ochre-200", border: "border-ochre-500", borderLeft: "border-l-ochre-500", solid: "bg-ochre-500" },
+  bad: { text: "text-brick-700", bg: "bg-brick-50", ring: "ring-brick-200", border: "border-brick-600", borderLeft: "border-l-brick-600", solid: "bg-brick-600" },
+  none: { text: "text-stone-500", bg: "bg-stone-50", ring: "ring-stone-200", border: "border-stone-300", borderLeft: "border-l-stone-300", solid: "bg-stone-400" },
 };
 
 export function formatUsd(n: number): string {

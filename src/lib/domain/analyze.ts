@@ -274,7 +274,6 @@ function spfCheck(domain: string, a: EmailAnalysis): CheckResult {
   const base = {
     id: "spf" as const,
     category: "email" as const,
-    clinicId: "email-securi-15",
     label: "SPF — Authorized Senders",
     maxPoints: 20,
     raw: spf.records,
@@ -357,7 +356,6 @@ function dmarcCheck(domain: string, a: EmailAnalysis): CheckResult {
   const base = {
     id: "dmarc" as const,
     category: "email" as const,
-    clinicId: "email-securi-15",
     label: "DMARC — Spoofing Enforcement",
     maxPoints: 25,
     raw: dmarc.record ? [dmarc.record] : [],
@@ -421,7 +419,6 @@ function dkimCheck(domain: string, a: EmailAnalysis): CheckResult {
   const base = {
     id: "dkim" as const,
     category: "email" as const,
-    clinicId: "email-securi-15",
     label: "DKIM — Message Signing",
     maxPoints: 15,
     raw: dkim.found.map((f) => `${f.selector}._domainkey  ${f.type}  ${f.value}`),
@@ -459,7 +456,6 @@ export function buildWebChecks(web: WebDetails): CheckResult[] {
   const base = (id: CheckResult["id"], label: string, maxPoints: number) => ({
     id,
     category: "web" as const,
-    clinicId: "website-atta-05",
     label,
     maxPoints,
     notes: [] as string[],

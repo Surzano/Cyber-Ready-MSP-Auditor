@@ -1,4 +1,4 @@
-/** Module 3 — 10-Question MSP Accountability Scorecard (vendors-msps-08 / vendors-msps-02 / identity-sec-24). */
+/** Module 3 — 10-Question MSP Accountability Scorecard. */
 import { letterGrade } from "./grading";
 
 export type Answer = "yes" | "partial" | "no";
@@ -8,7 +8,6 @@ export const ANSWER_POINTS: Record<Answer, number> = { yes: 10, partial: 4, no: 
 
 export interface Question {
   id: string;
-  clinicIds: string[];
   title: string;
   question: string;
   why: string;
@@ -21,7 +20,6 @@ export interface Question {
 export const QUESTIONS: Question[] = [
   {
     id: "q1",
-    clinicIds: ["identity-sec-07"],
     title: "Phishing-Resistant MFA Enforcement",
     question:
       "Does your MSP enforce MFA across 100% of accounts (including executives and board members) using app-based push/codes or security keys rather than SMS?",
@@ -33,7 +31,6 @@ export const QUESTIONS: Question[] = [
   },
   {
     id: "q2",
-    clinicIds: ["identity-sec-24", "vendors-msps-12"],
     title: "Help Desk Caller Identity Verification",
     question:
       "If someone calls your MSP help desk claiming to be an employee locked out of their account, does the MSP require technical out-of-band verification (like a push notification or callback to a manager) before resetting a password?",
@@ -45,7 +42,6 @@ export const QUESTIONS: Question[] = [
   },
   {
     id: "q3",
-    clinicIds: ["data-managem-11"],
     title: "Immutable 3-2-1 Backups & Restore Drills",
     question:
       "Does your MSP back up cloud data (Microsoft 365 SharePoint/OneDrive or Google Drive — not just servers) and have they provided proof of a successful test restore in the last 6 months?",
@@ -57,7 +53,6 @@ export const QUESTIONS: Question[] = [
   },
   {
     id: "q4",
-    clinicIds: ["detection-al-01"],
     title: "24/7 Endpoint Detection & Response",
     question:
       "Are all organization laptops running monitored EDR/MDR software (like Defender for Business, Huntress, or CrowdStrike) rather than basic traditional antivirus?",
@@ -69,7 +64,6 @@ export const QUESTIONS: Question[] = [
   },
   {
     id: "q5",
-    clinicIds: ["patch-manage-01"],
     title: "Automated OS & 3rd-Party Patching",
     question:
       "Does your MSP provide a monthly report proving that Windows/macOS and third-party browsers (Chrome, Adobe, Zoom) are patched within 14 days of critical releases?",
@@ -81,7 +75,6 @@ export const QUESTIONS: Question[] = [
   },
   {
     id: "q6",
-    clinicIds: ["identity-sec-19"],
     title: "15-Minute Offboarding Kill-Switch",
     question:
       "When an employee or volunteer leaves, does your MSP have a documented SLA to revoke all logins, active sessions, OAuth tokens, and email forwarding within 15 minutes of notification?",
@@ -93,7 +86,6 @@ export const QUESTIONS: Question[] = [
   },
   {
     id: "q7",
-    clinicIds: ["email-securi-19"],
     title: "Silent Inbox Auto-Forwarding & BEC Monitoring",
     question:
       "Has your MSP blocked external email auto-forwarding at the tenant level and enabled alerts for suspicious inbox rules or impossible-travel logins?",
@@ -105,7 +97,6 @@ export const QUESTIONS: Question[] = [
   },
   {
     id: "q8",
-    clinicIds: ["endpoints-de-14"],
     title: "Removal of Local Admin Privileges",
     question:
       "Do regular staff members operate as standard users on their laptops (requiring MSP elevation to install software), rather than holding full Local Administrator rights?",
@@ -117,7 +108,6 @@ export const QUESTIONS: Question[] = [
   },
   {
     id: "q9",
-    clinicIds: ["asset-manage-14"],
     title: "Live Hardware & Shadow IT Asset Inventory",
     question:
       "Can your MSP hand you an up-to-date list today of every laptop, mobile device, and third-party cloud app connected to your environment?",
@@ -129,7 +119,6 @@ export const QUESTIONS: Question[] = [
   },
   {
     id: "q10",
-    clinicIds: ["incident-res-06"],
     title: "Written Incident Response & Breach Call Tree",
     question:
       "Do you and your MSP have a shared 24/7 emergency call tree defining who to call during a ransomware or wire-fraud incident on a weekend?",

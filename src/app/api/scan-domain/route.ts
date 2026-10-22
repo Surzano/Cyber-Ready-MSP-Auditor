@@ -12,7 +12,7 @@ export const maxDuration = 30;
 
 const FETCH_TIMEOUT_MS = 6000;
 const EMAIL_BUDGET_MS = 10000;
-const USER_AGENT = "CyberReadyMSPAuditor/1.0 (+passive security header check)";
+const USER_AGENT = "MSPAuditor/1.0 (+passive security header check)";
 
 class DnsUnavailableError extends Error {}
 
