@@ -76,9 +76,28 @@ function isPrivateIp(ip: string): boolean {
   return v6 === "::" || v6 === "::1" || /^f[cd]/.test(v6) || /^fe[89ab]/.test(v6);
 }
 
+/** Resolver hiccups on the serverless host; they say nothing about the site being scanned. */
+const TRANSIENT_CODES = new Set(["EBUSY", "EAI_AGAIN", "ETIMEOUT", "ECONNRESET", "UND_ERR_CONNECT_TIMEOUT", "UND_ERR_SOCKET"]);
+
+function errorCode(e: unknown): string | undefined {
+  const err = e as { code?: string; cause?: { code?: string } } | null;
+  return err?.code ?? err?.cause?.code;
+}
+
+async function lookupWithRetry(host: string) {
+  for (let attempt = 1; ; attempt++) {
+    try {
+      return await withTimeout(dns.lookup(host, { all: true }), 4000, `lookup ${host}`);
+    } catch (e) {
+      if (attempt >= 3 || !TRANSIENT_CODES.has(errorCode(e) ?? "")) throw e;
+      await new Promise((r) => setTimeout(r, 250 * attempt));
+    }
+  }
+}
+
 async function assertPublicHost(host: string): Promise<void> {
   if (!sanitizeDomain(host)) throw new Error(`Refusing non-public host ${host}`);
-  const addrs = await withTimeout(dns.lookup(host, { all: true }), 4000, `lookup ${host}`);
+  const addrs = await lookupWithRetry(host);
   if (addrs.length === 0 || addrs.some((a) => isPrivateIp(a.address))) {
     throw new Error(`Refusing to connect: ${host} resolves to a private/reserved address`);
   }
@@ -173,6 +192,7 @@ async function inspectWebsite(domain: string): Promise<WebDetails> {
     } catch (e) {
       lastError = describeFetchError(e);
       if (isTimeout(e)) inconclusive ??= `the website didn't respond within ${FETCH_TIMEOUT_MS / 1000} seconds`;
+      else if (TRANSIENT_CODES.has(errorCode(e) ?? "")) inconclusive ??= "a temporary network error interrupted the website check";
     }
   }
   if (inconclusive) return { ...UNAVAILABLE_WEB, error: inconclusive };
