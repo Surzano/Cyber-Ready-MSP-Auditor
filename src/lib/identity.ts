@@ -16,6 +16,8 @@ export interface UserRow {
   enabled: boolean;
   mfa: boolean | null;
   lastSignIn: Date | null;
+  /** The sign-in cell had a value we couldn't read as a date (e.g. 14/03/2025 after an Excel re-save). */
+  signInUnreadable: boolean;
   role: string;
   isGlobalAdmin: boolean;
   license: string;
@@ -56,12 +58,30 @@ export interface IdentityAudit {
 // CSV parsing (RFC 4180: quoted fields, escaped quotes, CRLF, BOM)
 // ---------------------------------------------------------------------------
 
+/**
+ * Excel writes semicolon- or tab-separated "CSV" in many locales. Pick whichever of
+ * comma, semicolon or tab appears most often (outside quotes) in the first line.
+ */
+export function detectDelimiter(firstLine: string): "," | ";" | "\t" {
+  const counts = { ",": 0, ";": 0, "\t": 0 };
+  let inQuotes = false;
+  for (const c of firstLine) {
+    if (c === '"') inQuotes = !inQuotes;
+    else if (!inQuotes && c in counts) counts[c as keyof typeof counts]++;
+  }
+  return counts[";"] > counts[","] && counts[";"] >= counts["\t"] ? ";" : counts["\t"] > counts[","] ? "\t" : ",";
+}
+
 export function parseCsv(text: string): string[][] {
   const rows: string[][] = [];
   let row: string[] = [];
   let field = "";
   let inQuotes = false;
-  const s = text.replace(/^﻿/, "");
+  let s = text.replace(/^\uFEFF/, "");
+  // Excel's optional delimiter hint line, e.g. "sep=;"
+  const hint = /^sep=(.)\r?\n/i.exec(s);
+  if (hint) s = s.slice(hint[0].length);
+  const delimiter = hint ? hint[1] : detectDelimiter(s.slice(0, s.search(/\r|\n|$/)));
   for (let i = 0; i < s.length; i++) {
     const c = s[i];
     if (inQuotes) {
@@ -72,7 +92,7 @@ export function parseCsv(text: string): string[][] {
         } else inQuotes = false;
       } else field += c;
     } else if (c === '"') inQuotes = true;
-    else if (c === ",") {
+    else if (c === delimiter) {
       row.push(field);
       field = "";
     } else if (c === "\n" || c === "\r") {
@@ -103,12 +123,13 @@ export function toCsv(rows: (string | number)[][]): string {
 type Field = "displayName" | "upn" | "title" | "enabled" | "blocked" | "mfa" | "lastSignIn" | "role" | "license" | "monthlyCost" | "accountType";
 
 const HEADER_ALIASES: Record<Field, string[]> = {
-  displayName: ["displayname", "name", "fullname", "username", "user"],
+  displayName: ["displayname", "name", "fullname", "username", "user", "userdisplayname"],
   title: ["jobtitle", "title", "position"],
   upn: ["userprincipalname", "email", "emailaddress", "primaryemail", "upn", "mail", "emailaddressrequired"],
   enabled: ["accountenabled", "status", "enabled", "userstatus", "accountstatus", "statusreadonly"],
   blocked: ["blockcredential", "signinblocked", "blocksignin", "suspended"],
-  mfa: ["mfastatus", "mfa", "2svenrolled", "2svenforced", "isenrolledin2sv", "mfaenabled", "strongauthentication", "2svenrolledreadonly", "multifactorauthstatus", "permfastate"],
+  // "ismfaregistered" is Microsoft Entra's Authentication methods → User registration details report.
+  mfa: ["mfastatus", "mfa", "2svenrolled", "2svenforced", "isenrolledin2sv", "mfaenabled", "strongauthentication", "2svenrolledreadonly", "multifactorauthstatus", "permfastate", "ismfaregistered"],
   lastSignIn: ["lastsignindatetime", "lastsignin", "lastlogin", "lastlogintime", "lastsignedin", "lastsignindate", "lastinteractivesignin", "lastsignintimereadonly", "lastactivity"],
   role: ["role", "adminroles", "roles", "adminrole", "directoryroles", "isadmin", "admin"],
   license: ["licenses", "assignedlicense", "assignedlicenses", "license", "licensesku", "skus", "assignedproducts"],
@@ -149,13 +170,19 @@ function parseMfa(v: string | undefined): boolean | null {
   return null;
 }
 
-function parseDate(v: string | undefined): Date | null {
+/** null = never signed in; "unreadable" = there is a value, but not one we can trust as a date. */
+function parseDate(v: string | undefined): Date | null | "unreadable" {
   if (!v) return null;
   const t = v.trim();
-  if (!t || /^(never|n\/a|none|-|null)$/i.test(t)) return null;
+  if (!t || /^(never|never logged in|n\/a|none|-|null)$/i.test(t)) return null;
+  // Day-first dates (14/03/2025) and two-digit years are ambiguous; JavaScript would
+  // misread or reject them, so refuse them rather than guess.
+  if (/^\d{1,2}[/.-]\d{1,2}[/.-]\d{2}(\D|$)/.test(t)) return "unreadable";
+  const dm = /^(\d{1,2})[/.](\d{1,2})[/.]\d{4}/.exec(t);
+  if (dm && Number(dm[1]) > 12) return "unreadable";
   // Google exports like "2025/03/14 09:12:00 UTC"
   const d = new Date(t.replace(/^(\d{4})\/(\d{2})\/(\d{2})/, "$1-$2-$3").replace(/ UTC$/, "Z"));
-  return isNaN(d.getTime()) ? null : d;
+  return isNaN(d.getTime()) ? "unreadable" : d;
 }
 
 function parseAccountType(v: string | undefined, upn: string, name: string): AccountType {
@@ -189,11 +216,18 @@ export function parseUsers(text: string): { users: UserRow[]; warnings: string[]
   if (map.license === undefined) warnings.push("No license column detected — license waste cannot be measured.");
   if (map.monthlyCost === undefined && map.license !== undefined) warnings.push(`No monthlyCost column — paid licenses assumed at $${DEFAULT_LICENSE_COST}/mo.`);
   if (unmapped.length) warnings.push(`Ignored columns: ${unmapped.join(", ")}`);
+  if (map.role !== undefined && ["isadmin", "admin"].includes(normalizeHeader(rows[0][map.role]))) {
+    warnings.push(`The "${rows[0][map.role].trim()}" column marks anyone with any admin role, so the Global Admin count may be too high. Check roles in the admin center.`);
+  }
 
   const get = (r: string[], f: Field) => (map[f] !== undefined ? r[map[f]!] : undefined);
-  const users = rows.slice(1).map((r) => {
+  const identified = rows.slice(1).filter((r) => (get(r, "upn") ?? "").trim() || (get(r, "displayName") ?? "").trim());
+  const skipped = rows.length - 1 - identified.length;
+  if (skipped) warnings.push(`Skipped ${skipped} row${skipped === 1 ? "" : "s"} with no name or email.`);
+  const users = identified.map((r) => {
     const upn = (get(r, "upn") ?? "").trim();
     const displayName = (get(r, "displayName") ?? "").trim() || upn;
+    const signIn = parseDate(get(r, "lastSignIn"));
     const role = (get(r, "role") ?? "").trim() || "User";
     const license = (get(r, "license") ?? "").trim();
     const isPaid = isPaidLicense(license);
@@ -205,7 +239,8 @@ export function parseUsers(text: string): { users: UserRow[]; warnings: string[]
       title: (get(r, "title") ?? "").trim(),
       enabled: parseEnabled(get(r, "enabled"), get(r, "blocked")),
       mfa: parseMfa(get(r, "mfa")),
-      lastSignIn: parseDate(get(r, "lastSignIn")),
+      lastSignIn: signIn === "unreadable" ? null : signIn,
+      signInUnreadable: signIn === "unreadable",
       role,
       isGlobalAdmin: isGlobalAdminRole(role),
       license: license || "Unlicensed",
@@ -214,6 +249,12 @@ export function parseUsers(text: string): { users: UserRow[]; warnings: string[]
       accountType: parseAccountType(get(r, "accountType"), upn, displayName),
     } satisfies UserRow;
   });
+  const unreadable = users.filter((u) => u.signInUnreadable).length;
+  if (unreadable) {
+    warnings.push(
+      `${unreadable} sign-in date${unreadable === 1 ? "" : "s"} couldn't be read (for example, day-first dates like 14/03/2025), so ${unreadable === 1 ? "that account was" : "those accounts were"} not checked for staleness. Re-export without opening the file in Excel, or use YYYY-MM-DD dates.`,
+    );
+  }
   return { users, warnings };
 }
 
@@ -225,7 +266,7 @@ export function auditUsers(users: UserRow[], source: string, warnings: string[] 
   const hasSignInData = users.some((u) => u.lastSignIn);
   const audited: AuditedUser[] = users.map((u) => {
     const days = u.lastSignIn ? Math.floor((now.getTime() - u.lastSignIn.getTime()) / 86_400_000) : null;
-    const stale = u.enabled && hasSignInData && u.accountType !== "Shared/Service" && (days === null || days > STALE_DAYS);
+    const stale = u.enabled && hasSignInData && !u.signInUnreadable && u.accountType !== "Shared/Service" && (days === null || days > STALE_DAYS);
     const flags: FlagCode[] = [];
     if (u.enabled && u.mfa === false) flags.push(u.isGlobalAdmin ? "ADMIN_NO_MFA" : "NO_MFA");
     if (stale) flags.push("STALE");

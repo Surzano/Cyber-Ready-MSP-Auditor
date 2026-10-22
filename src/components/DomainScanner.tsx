@@ -9,12 +9,12 @@ import type { CheckResult, DomainScanResult } from "@/lib/types";
 import { Button, Card, GradeBadge, SectionTitle, StatusPill, cx } from "./ui";
 
 const MODE_LABEL: Record<DomainScanResult["mode"], { label: string; cls: string; Icon: typeof Radar }> = {
-  "live-server": { label: "Live scan · Serverless API (DNS + HTTP headers)", cls: "bg-moss-50 text-moss-700 ring-moss-200", Icon: ServerCog },
-  "live-doh": { label: "Live scan · Browser DNS-over-HTTPS (email checks only)", cls: "bg-harbor-50 text-harbor-700 ring-harbor-200", Icon: Globe },
+  "live-server": { label: "Live check · email and website", cls: "bg-moss-50 text-moss-700 ring-moss-200", Icon: ServerCog },
+  "live-doh": { label: "Live check · email only", cls: "bg-harbor-50 text-harbor-700 ring-harbor-200", Icon: Globe },
   simulated: { label: "Sample domain · offline", cls: "bg-ochre-50 text-ochre-800 ring-ochre-200", Icon: FlaskConical },
 };
 
-const SCAN_STEPS = ["Sanitizing domain", "Querying SPF TXT & counting DNS lookups", "Reading _dmarc policy", "Probing DKIM selectors", "Inspecting HTTPS & security headers"];
+const SCAN_STEPS = ["Cleaning up the address", "Checking SPF and counting DNS lookups", "Reading the DMARC policy", "Looking for DKIM keys", "Checking HTTPS and security headers"];
 
 export function DomainScanner({
   result,
@@ -80,7 +80,7 @@ export function DomainScanner({
             <input
               value={input}
               onChange={(e) => setInput(e.target.value)}
-              placeholder="Type any domain — e.g. redcross.org or paste https://www.example.org/donate"
+              placeholder="Enter your domain, like example.org, or paste your website address"
               className="w-full rounded-md border border-stone-300 bg-paper py-3 pr-4 pl-10 text-[15px] text-stone-900 outline-none placeholder:text-stone-400 focus:border-moss-500 focus:ring-4 focus:ring-moss-500/15"
               autoComplete="off"
               spellCheck={false}
@@ -97,7 +97,7 @@ export function DomainScanner({
           </Button>
         </form>
         <p className="mt-3 text-xs text-stone-500">
-          URLs, email addresses and paths are cleaned automatically. Live scans use the serverless API when available and fall back to DNS-over-HTTPS in your browser.
+          You can paste a full web address or an email address; it will be trimmed to the domain. Only public records are read.
         </p>
 
         {loading && (
@@ -195,7 +195,9 @@ export function DomainScanner({
                     <Globe className="h-4 w-4" /> Website Security Headers
                   </div>
                   <p className="mt-1">
-                    Not graded in browser-only mode — browsers block reading another website&apos;s response headers. Deploy with the serverless API (e.g. Vercel) to include the website grade.
+                    {result.web.error
+                      ? `Not graded this time: ${result.web.error}. The grade above covers email only. Try again in a few minutes.`
+                      : "Not graded in browser-only mode, because browsers can't read another website's response headers. The grade above covers email only."}
                   </p>
                 </Card>
               )}

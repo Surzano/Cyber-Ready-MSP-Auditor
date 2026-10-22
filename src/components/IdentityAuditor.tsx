@@ -13,7 +13,7 @@ type Filter = "flagged" | "all" | "mfa" | "stale" | "admin" | "waste";
 const FLAG_STYLE: Record<FlagCode, { label: string; cls: string }> = {
   ADMIN_NO_MFA: { label: "Admin · No MFA", cls: "bg-brick-600 text-white ring-brick-600" },
   NO_MFA: { label: "No MFA", cls: "bg-brick-50 text-brick-700 ring-brick-200" },
-  STALE: { label: `Stale >${STALE_DAYS}d`, cls: "bg-ochre-50 text-ochre-800 ring-ochre-200" },
+  STALE: { label: `Stale (${STALE_DAYS}+ days)`, cls: "bg-ochre-50 text-ochre-800 ring-ochre-200" },
   LICENSE_WASTE: { label: "License waste", cls: "bg-violet-50 text-violet-700 ring-violet-200" },
   GLOBAL_ADMIN: { label: "Global Admin", cls: "bg-stone-100 text-stone-700 ring-stone-300" },
 };
@@ -49,7 +49,7 @@ export function IdentityAuditor({
     if (!file) return;
     setError(null);
     if (!/\.csv$/i.test(file.name) && file.type !== "text/csv") {
-      setError("Please choose a .csv file (export from Microsoft 365 / Entra ID or Google Workspace Admin).");
+      setError("Please choose a .csv file exported from Microsoft 365 or Google Workspace.");
       return;
     }
     try {
@@ -185,42 +185,44 @@ export function IdentityAuditor({
 
       {!audit ? (
         <EmptyState icon={<Users className="h-6 w-6" />} title="No user directory loaded yet">
-          Export users from <b>Microsoft Entra admin center → Users → Download users</b> (add per-user MFA and sign-in activity), or <b>Google Admin → Directory → Users → Download</b>, then drop the file above.
+          <b>Google Workspace:</b> Admin console → Directory → Users → Download users. This includes 2-Step Verification and last sign-in.
+          <br />
+          <b>Microsoft 365:</b> the standard user download doesn&apos;t include MFA or last sign-in. Use Entra admin center → Protection → Authentication methods → User registration details for MFA, or ask your MSP for one export with MFA status, last sign-in, roles, and licenses (the blank template shows the columns).
         </EmptyState>
       ) : (
         <div className="animate-fade-up space-y-6" key={audit.source + audit.totalAccounts}>
           <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-[repeat(4,1fr)_auto]">
             <Kpi
-              label="MFA Coverage"
+              label="MFA coverage"
               value={`${audit.mfaCoveragePct}%`}
               sub={`${audit.missingMfa.length} enabled account${audit.missingMfa.length === 1 ? "" : "s"} without MFA`}
               tone={audit.mfaCoveragePct === 100 ? "good" : audit.mfaCoveragePct >= 90 ? "ok" : "bad"}
               icon={<KeyRound className="h-4 w-4" />}
             />
             <Kpi
-              label="Stale Accounts Found"
+              label="Stale accounts"
               value={audit.stale.length}
-              sub={`Enabled, no sign-in for >${STALE_DAYS} days`}
+              sub={`Enabled, with no sign-in for more than ${STALE_DAYS} days`}
               tone={audit.stale.length === 0 ? "good" : audit.stale.length <= 1 ? "ok" : "bad"}
               icon={<UserX className="h-4 w-4" />}
             />
             <Kpi
-              label="Global Admin Count"
+              label="Global Admins"
               value={audit.globalAdmins.length}
-              sub={audit.adminsWithoutMfa.length ? `${audit.adminsWithoutMfa.length} admin without MFA — CRITICAL` : audit.adminSprawl === "warning" ? "Admin sprawl: recommended ≤ 3" : "Within recommended range"}
+              sub={audit.adminsWithoutMfa.length ? `${audit.adminsWithoutMfa.length} without MFA (critical)` : audit.adminSprawl === "warning" ? "More than recommended (3 or fewer)" : "Within the recommended range"}
               tone={audit.adminSprawl === "critical" ? "bad" : audit.adminSprawl === "warning" ? "ok" : "good"}
               icon={<Crown className="h-4 w-4" />}
             />
             <Kpi
-              label="Annual License Savings"
+              label="Yearly license savings"
               value={formatUsd(audit.annualWaste)}
-              sub={`${formatUsd(audit.monthlyWaste)}/mo across ${audit.wasted.length} inactive account${audit.wasted.length === 1 ? "" : "s"}`}
+              sub={`${formatUsd(audit.monthlyWaste)} a month across ${audit.wasted.length} inactive account${audit.wasted.length === 1 ? "" : "s"}`}
               tone={audit.annualWaste === 0 ? "good" : "ok"}
               icon={<PiggyBank className="h-4 w-4" />}
             />
             <Card className="flex items-center justify-center p-5 sm:col-span-2 xl:col-span-1">
               <div className="text-center">
-                <div className="mb-2 text-xs font-semibold tracking-wide text-stone-500 uppercase">Identity Grade</div>
+                <div className="mb-2 text-xs font-semibold tracking-wide text-stone-500 uppercase">Identity grade</div>
                 <GradeBadge grade={audit.grade} size="lg" score={audit.score} />
               </div>
             </Card>
@@ -295,7 +297,7 @@ export function IdentityAuditor({
                         </span>
                       </td>
                       <td className={cx("px-3 py-2.5 text-xs tabular-nums", u.stale ? "font-semibold text-ochre-700" : "text-stone-600")}>
-                        {u.lastSignIn ? `${u.lastSignIn.toLocaleDateString()} (${u.daysSinceSignIn}d)` : "Never"}
+                        {u.lastSignIn ? `${u.lastSignIn.toLocaleDateString()} (${u.daysSinceSignIn}d)` : u.signInUnreadable ? "Unreadable date" : "Never"}
                       </td>
                       <td className={cx("px-3 py-2.5 text-xs", u.isGlobalAdmin ? "font-semibold text-stone-900" : "text-stone-600")}>{u.role}</td>
                       <td className="px-3 py-2.5 text-xs text-stone-600">

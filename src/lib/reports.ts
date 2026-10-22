@@ -72,6 +72,9 @@ function signature(ctx: AuditContext): string {
   ].join("\n");
 }
 
+/** "1 account" / "3 accounts" */
+const count = (n: number, one: string, many = `${one}s`) => `${n} ${n === 1 ? one : many}`;
+
 function userLine(u: AuditedUser, extra = ""): string {
   return `   • ${u.displayName} <${u.upn}>${u.title ? ` — ${u.title}` : ""}${extra}`;
 }
@@ -109,7 +112,7 @@ function headerConfigSnippets(missing: (keyof typeof RECOMMENDED_HEADERS)[]): st
 function ticketEmail(ctx: AuditContext): Ticket {
   const d = ctx.domain;
   const base = { id: 1 as const, title: "Email Authentication & Domain Hardening" };
-  if (!d) return { ...base, priority: "High", findingCount: 0, subject: "", body: "", ready: false, emptyReason: "Run the Domain & Website Scanner (step 1) to generate this ticket." };
+  if (!d) return { ...base, priority: "High", findingCount: 0, subject: "", body: "", ready: false, emptyReason: "Check your domain in step 1 to generate this ticket." };
   const failing = d.checks.filter((c) => c.status === "fail" || c.status === "warn");
   const email = failing.filter((c) => c.category === "email");
   const web = failing.filter((c) => c.category === "web");
@@ -148,7 +151,7 @@ function ticketEmail(ctx: AuditContext): Ticket {
     }
     lines.push("");
   }
-  if (!d.web.available) lines.push("(Website headers were not checked in this scan mode — please also verify HSTS, CSP, X-Frame-Options, X-Content-Type-Options and Referrer-Policy.)\n");
+  if (!d.web.available) lines.push("(Website headers were not checked in this scan. Please also verify HSTS, CSP, X-Frame-Options, X-Content-Type-Options, and Referrer-Policy.)\n");
   if (!failing.length) lines.push("All email authentication and website header checks passed. Please confirm these settings are monitored for drift.\n");
   lines.push(signature(ctx));
   const critical = d.checks.some((c) => (c.id === "dmarc" || c.id === "spf") && c.status === "fail");
@@ -165,9 +168,9 @@ function ticketEmail(ctx: AuditContext): Ticket {
 function ticketIdentity(ctx: AuditContext): Ticket {
   const a = ctx.identity;
   const base = { id: 2 as const, title: "Identity Hygiene, MFA Enforcement & License Reclamation" };
-  if (!a) return { ...base, priority: "High", findingCount: 0, subject: "", body: "", ready: false, emptyReason: "Upload a user export or load the sample tenant in step 2 to generate this ticket." };
+  if (!a) return { ...base, priority: "High", findingCount: 0, subject: "", body: "", ready: false, emptyReason: "Add a user export, or use the sample nonprofit, in step 2 to generate this ticket." };
   const lines: string[] = [];
-  lines.push(header(ctx, `A review of our user directory export (${a.totalAccounts} accounts, MFA coverage ${a.mfaCoveragePct}%) identified the following identity risks. Please action them in priority order.`));
+  lines.push(header(ctx, `A review of our user directory export (${a.totalAccounts} accounts, MFA coverage ${a.mfaCoveragePct}%) identified the following identity risks. Please address them in priority order.`));
   let n = 1;
   if (a.adminsWithoutMfa.length) {
     lines.push(`${n++}. [CRITICAL] Global Admin accounts WITHOUT MFA — enforce phishing-resistant MFA today:`);
@@ -176,13 +179,13 @@ function ticketIdentity(ctx: AuditContext): Ticket {
   }
   const nonAdminNoMfa = a.missingMfa.filter((u) => !u.isGlobalAdmin);
   if (nonAdminNoMfa.length) {
-    lines.push(`${n++}. Enforce MFA (Authenticator app or security key, not SMS) for these ${nonAdminNoMfa.length} enabled accounts:`);
+    lines.push(`${n++}. Enforce MFA (authenticator app or security key, not SMS) for ${nonAdminNoMfa.length === 1 ? "this enabled account" : `these ${nonAdminNoMfa.length} enabled accounts`}:`);
     nonAdminNoMfa.forEach((u) => lines.push(userLine(u)));
     lines.push("   Then enable Conditional Access / Security Defaults so no new account can be created without MFA.");
     lines.push("");
   }
   if (a.stale.length) {
-    lines.push(`${n++}. Disable sign-in, revoke sessions, and offboard these ${a.stale.length} dormant accounts (no sign-in for >90 days):`);
+    lines.push(`${n++}. Disable sign-in, revoke sessions, and offboard ${a.stale.length === 1 ? "this dormant account" : `these ${a.stale.length} dormant accounts`} (no sign-in for more than 90 days):`);
     a.stale.forEach((u) => lines.push(userLine(u, ` — last sign-in: ${u.daysSinceSignIn === null ? "never" : `${u.daysSinceSignIn} days ago`}`)));
     lines.push("   Convert to shared mailboxes or export mailbox data first if records retention requires it.");
     lines.push("");
@@ -190,11 +193,11 @@ function ticketIdentity(ctx: AuditContext): Ticket {
   if (a.adminSprawl !== "ok" || a.globalAdmins.length > 2) {
     lines.push(`${n++}. Reduce Global/Super Admin accounts from ${a.globalAdmins.length} to 2 named break-glass/MSP admins:`);
     a.globalAdmins.forEach((u) => lines.push(userLine(u, u.mfa === false ? " — MFA DISABLED" : "")));
-    lines.push("   Assign least-privilege roles (User Admin, Billing Admin, Exchange Admin) to everyone else, and use separate admin accounts from daily-use mailboxes.");
+    lines.push("   Assign least-privilege roles (User Admin, Billing Admin, Exchange Admin) to everyone else, and use admin accounts that are separate from everyday mailboxes.");
     lines.push("");
   }
   if (a.wasted.length) {
-    lines.push(`${n++}. Remove paid licenses from these ${a.wasted.length} disabled/dormant accounts — saves ${formatUsd(a.monthlyWaste)}/month = ${formatUsd(a.annualWaste)}/year:`);
+    lines.push(`${n++}. Remove paid licenses from ${a.wasted.length === 1 ? "this disabled or dormant account" : `these ${a.wasted.length} disabled or dormant accounts`}. This saves ${formatUsd(a.monthlyWaste)} a month (${formatUsd(a.annualWaste)} a year):`);
     a.wasted.forEach((u) => lines.push(userLine(u, ` — ${u.license} (${formatUsd(u.monthlyCost)}/mo)`)));
     lines.push("   Please also reduce the license count on our next invoice accordingly.");
     lines.push("");
@@ -216,9 +219,9 @@ function ticketIdentity(ctx: AuditContext): Ticket {
 function ticketGovernance(ctx: AuditContext): Ticket {
   const s = ctx.scorecard;
   const base = { id: 3 as const, title: "MSP Security Baseline & SLA Governance Alignment" };
-  if (!s.answered) return { ...base, priority: "High", findingCount: 0, subject: "", body: "", ready: false, emptyReason: "Answer the 10-Question MSP Report Card (step 3) to generate this ticket." };
+  if (!s.answered) return { ...base, priority: "High", findingCount: 0, subject: "", body: "", ready: false, emptyReason: "Answer the questions in step 3 to generate this ticket." };
   const lines: string[] = [];
-  lines.push(header(ctx, `We completed a 10-point MSP security accountability review (score ${s.score}/${s.answered * 10}). We would like to formally request the following services and evidence be added to our support agreement. Items marked "Unsure" mean we need written confirmation and evidence.`));
+  lines.push(header(ctx, `We completed a 10-question review of our MSP security services (score ${s.score}/${s.answered * 10}). We would like to formally request that the following services and evidence be added to our support agreement. Items marked "Unsure" mean we need written confirmation and evidence.`));
   s.gaps.forEach(({ q, answer }, i) => {
     lines.push(`${i + 1}. ${q.title} [${answer === "no" ? "NOT IN PLACE" : "UNSURE / PARTIAL — evidence requested"}]`);
     lines.push(`   Request: ${q.action}`);
@@ -283,11 +286,11 @@ export function boardRisks(ctx: AuditContext): BoardRisk[] {
     fraud.push(why);
   };
   if (d) {
-    if (!d.dmarc.record || d.dmarc.policy === "none") addF(3, d.dmarc.record ? "DMARC is 'monitor only' — spoofed emails are still delivered" : "No DMARC policy — anyone can send email as our domain");
-    else if (d.dmarc.policy === "quarantine") addF(1, "DMARC quarantines (not rejects) spoofed email");
+    if (!d.dmarc.record || d.dmarc.policy === "none") addF(3, d.dmarc.record ? "DMARC is set to monitor only, so spoofed emails are still delivered" : "No DMARC policy, so anyone can send email as our domain");
+    else if (d.dmarc.policy === "quarantine") addF(1, "DMARC sends spoofed email to spam instead of rejecting it");
     if (d.spf.allQualifier !== "-") addF(1, "SPF does not hard-fail unauthorized senders");
   }
-  if (a?.missingMfa.length) addF(a.adminsWithoutMfa.length ? 3 : 2, `${a.missingMfa.length} active accounts have no MFA${a.adminsWithoutMfa.length ? `, including ${a.adminsWithoutMfa.length} Global Admin` : ""}`);
+  if (a?.missingMfa.length) addF(a.adminsWithoutMfa.length ? 3 : 2, `${count(a.missingMfa.length, "active account")} ${a.missingMfa.length === 1 ? "has" : "have"} no MFA${a.adminsWithoutMfa.length ? `, including ${count(a.adminsWithoutMfa.length, "Global Admin")}` : ""}`);
   for (const id of ["q2", "q7", "q1"]) if (gapIds.has(id)) addF(gapNo.has(id) ? 2 : 1, `MSP gap: ${qTitle(id)}`);
 
   // Ransomware downtime
@@ -300,7 +303,7 @@ export function boardRisks(ctx: AuditContext): BoardRisk[] {
   for (const id of ["q3", "q4", "q5", "q8"]) if (gapIds.has(id)) addR(gapNo.has(id) ? 2 : 1, `MSP gap: ${qTitle(id)}`);
   if (a?.adminsWithoutMfa.length) addR(2, "An administrator account without MFA is a direct path to tenant-wide ransomware");
   if (a && a.globalAdmins.length > 3) addR(1, `${a.globalAdmins.length} Global Admins (recommended: 2)`);
-  if (d?.web.available && d.checks.some((c) => c.category === "web" && c.status === "fail")) addR(1, "Website missing baseline security headers");
+  if (d?.web.available && d.checks.some((c) => c.category === "web" && c.status === "fail")) addR(1, "The website is missing basic security headers");
 
   // Compliance / grant / insurance
   const comp: string[] = [];
@@ -309,7 +312,7 @@ export function boardRisks(ctx: AuditContext): BoardRisk[] {
     cp += pts;
     comp.push(why);
   };
-  if (a?.stale.length) addC(2, `${a.stale.length} former staff/inactive accounts still have access to organizational data`);
+  if (a?.stale.length) addC(2, `${count(a.stale.length, "inactive or former-staff account")} still ${a.stale.length === 1 ? "has" : "have"} access to organizational data`);
   if (a?.wasted.length) addC(1, `${formatUsd(a.annualWaste)}/year spent on licenses for inactive accounts`);
   for (const id of ["q6", "q9", "q10"]) if (gapIds.has(id)) addC(gapNo.has(id) ? 2 : 1, `MSP gap: ${qTitle(id)}`);
 
@@ -348,13 +351,13 @@ export function quickWins(ctx: AuditContext): QuickWin[] {
   const a = ctx.identity;
   const gap = (id: string) => ctx.scorecard.gaps.some((g) => g.q.id === id);
   if (a?.adminsWithoutMfa.length) wins.push({ title: `Turn on MFA for ${a.adminsWithoutMfa.length} unprotected administrator account${a.adminsWithoutMfa.length > 1 ? "s" : ""}`, detail: a.adminsWithoutMfa.map((u) => u.displayName).join(", "), effort: "Today · $0" });
-  if (a && a.missingMfa.length > a.adminsWithoutMfa.length) wins.push({ title: `Enforce MFA for the ${a.missingMfa.length - a.adminsWithoutMfa.length} remaining accounts without it`, detail: "Moves MFA coverage to 100%", effort: "1 week · $0" });
+  if (a && a.missingMfa.length > a.adminsWithoutMfa.length) wins.push({ title: `Enforce MFA for the ${count(a.missingMfa.length - a.adminsWithoutMfa.length, "remaining account")} without it`, detail: "Moves MFA coverage to 100%", effort: "1 week · $0" });
   if (d && d.dmarc.policy !== "reject") wins.push({ title: `Advance DMARC to ${d.dmarc.policy === "quarantine" ? "p=reject" : "p=quarantine"}`, detail: "Stops criminals from sending email that appears to come from us", effort: "30 min DNS change · $0" });
-  if (a?.wasted.length) wins.push({ title: `Offboard ${a.wasted.length} dormant accounts & reclaim licenses`, detail: `Saves ${formatUsd(a.annualWaste)} per year`, effort: "1 hour · saves money" });
+  if (a?.wasted.length) wins.push({ title: `Offboard ${count(a.wasted.length, "dormant account")} and reclaim licenses`, detail: `Saves ${formatUsd(a.annualWaste)} per year`, effort: "1 hour · saves money" });
   if (a && a.globalAdmins.length > 3) wins.push({ title: `Reduce Global Admins from ${a.globalAdmins.length} to 2`, detail: "Shrinks the number of 'master keys' to our data", effort: "1 hour · $0" });
   if (gap("q2")) wins.push({ title: "Require help-desk caller verification", detail: "Prevents social-engineering password resets", effort: "MSP process change" });
   if (gap("q3")) wins.push({ title: "Schedule a backup restore fire drill", detail: "Proves we can recover from ransomware", effort: "MSP task · 30 days" });
-  if (d && d.spf.allQualifier !== "-" && d.spf.record) wins.push({ title: "Change SPF ~all to -all", detail: "Tells mail servers to reject unauthorized senders", effort: "15 min DNS change · $0" });
+  if (d && d.spf.allQualifier !== "-" && d.spf.record) wins.push({ title: d.spf.allQualifier ? `Change SPF ${d.spf.allQualifier}all to -all` : "End the SPF record with -all", detail: "Tells mail servers to reject unauthorized senders", effort: "15 min DNS change · $0" });
   if (gap("q10")) wins.push({ title: "Create a one-page incident call tree", detail: "Who to call on a weekend during wire fraud or ransomware", effort: "1-hour meeting" });
   return wins.slice(0, 6);
 }

@@ -1,0 +1,27 @@
+# Well-known nonprofits for checking the domain scanner against independent sources.
+# One domain per line. Lines starting with # are ignored.
+redcross.org
+unicef.org
+habitat.org
+unitedway.org
+feedingamerica.org
+wikimedia.org
+savethechildren.org
+worldwildlife.org
+goodwill.org
+bgca.org
+nature.org
+charitywater.org
+kiva.org
+eff.org
+khanacademy.org
+girlscouts.org
+bbbs.org
+specialolympics.org
+stjude.org
+americares.org
+directrelief.org
+care.org
+heifer.org
+mozilla.org
+doctorswithoutborders.org

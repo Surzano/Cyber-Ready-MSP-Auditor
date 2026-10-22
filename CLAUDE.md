@@ -20,7 +20,8 @@
 - **Deployment Target:** Vercel (serverless compatible).
 - **Zero-Data-Retention Privacy Guarantee:**
   - All user CSV parsing (Module 2) and MSP scorecard answers (Module 3) MUST execute 100% client-side in the browser memory. No sensitive user lists or PII are ever uploaded to a database or external server.
-  - Explain the privacy model in plain language next to the upload (where the file goes, how to verify it with DevTools or offline). Do not link to the source repository from the UI and in the footer, and list which CSV columns are actually needed so users can strip or pseudonymize the rest.
+  - Explain the privacy model in plain language next to the upload and in the footer (where the file goes, how to verify it with DevTools or offline), and list which CSV columns are actually needed so users can strip or pseudonymize the rest.
+  - Do not link to the source repository from the UI.
 
 ## 4. Detailed Functional Modules
 
@@ -35,10 +36,11 @@
      - `x-frame-options`
      - `x-content-type-options`
      - `referrer-policy`
-- **Scoring & UI:** Calculates a Domain & Web Security Grade (A–F), displays pass/warn/fail cards with a toggle between **"Plain-English Nonprofit Impact"** and **"Technical Raw Record View"**.
+- **Scoring & UI:** Calculates a Domain & Web Security Grade (A–F), displays pass/warn/fail cards with a toggle between **"Plain English"** and **"Technical detail"**. If the website times out or returns a bot-blocking status (401/403/429/503), it is left ungraded rather than failed.
+- **Validation:** `validation/README.md` — `npm run validate:domains` compares results with independent DNS and header checks; `npm run validate:tenant` compares the identity audit with a hand-written answer key.
 
 ### Module 2: Identity, Access & License Waste Auditor
-- **Client-Side CSV Parser:** Supports drag-and-drop CSV upload or a 1-click **"Load Sample Nonprofit Tenant (Hope Valley Community Services)"** button for live presentation demos.
+- **Client-Side CSV Parser:** Supports drag-and-drop CSV upload or a one-click **"Use the sample nonprofit"** link for demos. Handles comma, semicolon and tab delimiters, Excel's `sep=` line, and refuses (with a warning) sign-in dates it can't read unambiguously rather than treating them as "never".
 - **Flexible Column Mapping:** Automatically normalizes column headers from either Microsoft 365 Entra ID exports or Google Workspace exports:
   - `displayName` / `Name`
   - `userPrincipalName` / `Email`
@@ -86,8 +88,7 @@
     - Print / Export to PDF button (`window.print()` with clean `@media print` CSS that hides navigation buttons and formats cleanly onto 1–2 pages).
 
 ## 5. Demo Mode & Presentation Polish
-- Include a prominent **"⚡ Load Full Live Demo (Nonprofit Case Study)"** button in the top navigation bar.
-- Clicking it populates:
+- A **"Load sample data"** link in the step sidebar (and the `/?demo=1` deep link) populates:
   - A realistic sample nonprofit profile (*"Hope Valley Community Services — 24 Staff, Managed by Apex IT MSP"*).
   - Pre-loaded realistic CSV data (22 accounts: 4 missing MFA including 1 Global Admin, 3 dormant ex-employees still holding $22/mo M365 Business Premium licenses = $792/yr wasted, 5 total Global Admins).
   - Pre-filled MSP Scorecard responses showing common real-world MSP blind spots.

@@ -89,7 +89,7 @@ export function MspScorecard({
 
         <div className="lg:sticky lg:top-6 lg:self-start">
           <Card className="space-y-4 p-6 text-center">
-            <div className="text-xs font-semibold tracking-wide text-stone-500 uppercase">MSP Accountability Grade</div>
+            <div className="text-xs font-semibold tracking-wide text-stone-500 uppercase">MSP grade</div>
             <div className="flex justify-center">
               <GradeBadge grade={result.answered ? result.grade : null} size="xl" />
             </div>
@@ -111,7 +111,7 @@ export function MspScorecard({
                 </div>
               ))}
             </div>
-            {result.gaps.length > 0 && <p className="text-xs text-stone-500">{result.gaps.length} gaps will become formal requests in MSP Ticket #3.</p>}
+            {result.gaps.length > 0 && <p className="text-xs text-stone-500">{result.gaps.length} {result.gaps.length === 1 ? "gap becomes a request" : "gaps become requests"} in ticket 3.</p>}
             <Button variant="ghost" onClick={onReset} className="w-full text-xs">
               <RotateCcw className="h-3.5 w-3.5" /> Reset answers
             </Button>

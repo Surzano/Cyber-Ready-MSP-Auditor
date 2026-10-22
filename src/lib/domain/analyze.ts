@@ -325,7 +325,7 @@ function spfCheck(domain: string, a: EmailAnalysis): CheckResult {
       summary: `SPF ends in ${q}all (${q === "+" ? "pass-all" : "neutral"})`,
       plain:
         q === "+"
-          ? "Your SPF record literally authorizes every server on the internet to send email as you. This is worse than having no record."
+          ? "Your SPF record authorizes every server on the internet to send email as you. This is worse than having no record."
           : "Your SPF record says it has no opinion about unauthorized senders, so it provides essentially no protection.",
     };
   } else {
@@ -340,7 +340,7 @@ function spfCheck(domain: string, a: EmailAnalysis): CheckResult {
     r = {
       status: "fail",
       points: Math.min(r.points, 6),
-      summary: `${r.summary} — but ${spf.lookupCount} DNS lookups exceeds the limit of 10`,
+      summary: `${r.summary}, but ${spf.lookupCount} DNS lookups exceed the limit of 10`,
       plain:
         "Your SPF record has grown too large (more than 10 DNS lookups). Receiving servers stop evaluating it and treat it as an error, which can cause legitimate email to bounce and lets spoofed email through.",
     };
@@ -369,10 +369,10 @@ function dmarcCheck(domain: string, a: EmailAnalysis): CheckResult {
       points: 0,
       summary: "No DMARC record at _dmarc." + domain,
       plain:
-        "There is no policy telling Gmail, Outlook, or Yahoo what to do with email that fakes your domain. This is the #1 enabler of wire-fraud and fake-invoice scams against nonprofits.",
+        "There is no policy telling Gmail, Outlook, or Yahoo what to do with email that fakes your domain. This is one of the main reasons wire-fraud and fake-invoice scams against nonprofits succeed.",
     };
   }
-  if (!dmarc.rua) base.notes.push("No rua= reporting address — you are blind to who is sending as your domain.");
+  if (!dmarc.rua) base.notes.push("No rua= reporting address, so you can't see who is sending email as your domain.");
   if (dmarc.pct !== null && dmarc.pct < 100) base.notes.push(`pct=${dmarc.pct}: policy applies to only ${dmarc.pct}% of failing mail.`);
   if (dmarc.subdomainPolicy) base.notes.push(`Subdomain policy sp=${dmarc.subdomainPolicy}`);
   const ruaPenalty = dmarc.rua ? 0 : 2;
@@ -394,7 +394,7 @@ function dmarcCheck(domain: string, a: EmailAnalysis): CheckResult {
       status: "warn",
       points: 18 - ruaPenalty,
       summary: "DMARC p=quarantine (partial enforcement)",
-      plain: "Fake email using your domain is sent to spam folders. Good protection — the final step is moving to p=reject so it's blocked entirely.",
+      plain: "Fake email using your domain is sent to spam folders. That's good protection; the final step is moving to p=reject so it's blocked entirely.",
       fix: `TXT  _dmarc.${domain}  "v=DMARC1; p=reject; pct=100; rua=${rua}; fo=1"`,
     };
   }
@@ -402,9 +402,9 @@ function dmarcCheck(domain: string, a: EmailAnalysis): CheckResult {
     ...base,
     status: "fail",
     points: dmarc.policy === "none" ? Math.max(0, 6 - ruaPenalty) : 0,
-    summary: dmarc.policy === "none" ? "DMARC p=none (monitoring only — no protection)" : "DMARC record has no valid p= policy",
+    summary: dmarc.policy === "none" ? "DMARC p=none (monitoring only, no protection)" : "DMARC record has no valid p= policy",
     plain:
-      "A DMARC record exists but is set to 'monitor only'. Criminals can still send emails that look exactly like they came from your organization, and they will be delivered. Many MSPs set this up once and never finish the job.",
+      "A DMARC record exists but is set to monitor only. Criminals can still send emails that look exactly like they came from your organization, and those emails will be delivered. Monitoring is a normal first step, but it has to be followed by enforcement.",
   };
 }
 
@@ -412,7 +412,7 @@ function dkimCheck(domain: string, a: EmailAnalysis): CheckResult {
   const { dkim } = a;
   const fix =
     a.emailProvider === "Microsoft 365"
-      ? `Enable DKIM signing in Microsoft Defender portal → Email authentication → DKIM for ${domain}, then publish the two CNAMEs it provides:\n  selector1._domainkey.${domain}  CNAME  selector1-${domain.replace(/\./g, "-")}._domainkey.<tenant>.onmicrosoft.com\n  selector2._domainkey.${domain}  CNAME  selector2-${domain.replace(/\./g, "-")}._domainkey.<tenant>.onmicrosoft.com`
+      ? `Enable DKIM signing in the Microsoft Defender portal → Email authentication → DKIM for ${domain}, then publish the two CNAMEs it provides:\n  selector1._domainkey.${domain}  CNAME  selector1-${domain.replace(/\./g, "-")}._domainkey.<tenant>.onmicrosoft.com\n  selector2._domainkey.${domain}  CNAME  selector2-${domain.replace(/\./g, "-")}._domainkey.<tenant>.onmicrosoft.com`
       : a.emailProvider === "Google Workspace"
         ? `Google Admin console → Apps → Google Workspace → Gmail → Authenticate email → Generate a 2048-bit key, publish it as TXT at google._domainkey.${domain}, then click "Start authentication".`
         : `Enable DKIM signing (2048-bit) with each service that sends mail as ${domain} and publish its <selector>._domainkey TXT/CNAME record.`;
@@ -442,9 +442,9 @@ function dkimCheck(domain: string, a: EmailAnalysis): CheckResult {
     ...base,
     status: "warn",
     points: 5,
-    summary: "No DKIM key found on common selectors — manual verification needed",
+    summary: "No DKIM key found on common selectors; check manually",
     plain:
-      "We couldn't find a digital signature key for your email. Your provider may use a custom selector, so ask your MSP to confirm DKIM signing is turned on — without it, DMARC has much less to work with.",
+      "We couldn't find a digital signature key for your email. Your provider may use a custom selector, so ask your MSP to confirm DKIM signing is turned on. Without it, DMARC has much less to work with.",
   };
 }
 
@@ -482,7 +482,7 @@ export function buildWebChecks(web: WebDetails): CheckResult[] {
             points: 5,
             summary: "HTTPS works, but http:// does not redirect to https://",
             plain: "Visitors who type your address without 'https' land on an unencrypted page, where donation and contact forms can be intercepted on public Wi-Fi.",
-            fix: "Configure a permanent 301 redirect from http:// to https:// at the web host / CDN.",
+            fix: "Configure a permanent (301) redirect from http:// to https:// at the web host or CDN.",
           }
         : {
             status: "pass" as const,
@@ -516,7 +516,7 @@ export function buildWebChecks(web: WebDetails): CheckResult[] {
             status: "pass" as const,
             points: 10,
             summary: `HSTS max-age=${maxAge}${/includesubdomains/i.test(hstsVal) ? "; includeSubDomains" : ""}${/preload/i.test(hstsVal) ? "; preload" : ""}`,
-            plain: "Browsers are instructed to only ever connect to your site securely.",
+            plain: "Browsers are told to connect to your site only over a secure connection.",
           }),
   };
 

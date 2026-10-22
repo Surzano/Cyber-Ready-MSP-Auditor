@@ -73,7 +73,7 @@ export async function scanViaDoh(domain: string): Promise<DomainScanResult> {
   const email = await analyzeEmail(mailDomain, dohResolver());
   return assembleResult(mailDomain, "live-doh", email, UNAVAILABLE_WEB, [
     "Scanned from your browser via DNS-over-HTTPS (dns.google / cloudflare-dns.com) because the serverless API was unavailable.",
-    "HTTP security headers were not graded: browsers block reading another site's response headers (CORS). Deploy with the /api route (e.g. Vercel) for the full website grade.",
+    "Website security headers were not graded, because browsers can't read another site's response headers.",
   ]);
 }
 
@@ -116,7 +116,7 @@ export async function scanDomain(input: string): Promise<DomainScanResult> {
     return result;
   } catch {
     throw new ScanError(
-      "Live DNS lookups are blocked on this network (both the server API and DNS-over-HTTPS failed). Use the Simulated Demo Domain to continue the presentation.",
+      "Live lookups seem to be blocked on this network. Try again on another connection, or use the sample domain to see how results look.",
       "OFFLINE",
     );
   }

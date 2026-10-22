@@ -58,6 +58,6 @@ export function simulatedScan(domain: string = SIMULATED_DOMAIN): DomainScanResu
       },
       error: null,
     },
-    ["SIMULATED DEMO DATA — no network queries were made. Use this when room Wi-Fi blocks DNS/HTTP."],
+    ["Sample result for a made-up organization. No network lookups were made."],
   );
 }

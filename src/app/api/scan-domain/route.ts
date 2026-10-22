@@ -111,6 +111,11 @@ async function safeFetch(url: string): Promise<{ res: Response; finalUrl: string
   throw new Error("Too many redirects");
 }
 
+/** Answers that say "not for you right now" rather than anything about the site's real headers. */
+const INCONCLUSIVE_STATUS = new Set([401, 403, 429, 503]);
+
+const isTimeout = (e: unknown) => e instanceof Error && (e.name === "TimeoutError" || e.name === "AbortError");
+
 function describeFetchError(e: unknown): string {
   if (e instanceof Error) {
     if (e.name === "TimeoutError" || e.name === "AbortError") return `timed out after ${FETCH_TIMEOUT_MS / 1000}s`;
@@ -123,6 +128,9 @@ function describeFetchError(e: unknown): string {
 async function inspectWebsite(domain: string): Promise<WebDetails> {
   const candidates = domain.startsWith("www.") ? [domain] : [domain, `www.${domain}`];
   let lastError = "unreachable";
+  // A timeout or a bot-blocking page proves nothing about the site's security, so if that is
+  // all we got, leave the website ungraded instead of failing every header.
+  let inconclusive: string | null = null;
   for (const host of candidates) {
     try {
       const [{ res, finalUrl }, httpRedirect] = await Promise.all([
@@ -145,6 +153,10 @@ async function inspectWebsite(domain: string): Promise<WebDetails> {
           }
         })(),
       ]);
+      if (INCONCLUSIVE_STATUS.has(res.status)) {
+        inconclusive = `the website answered with HTTP ${res.status}, which usually means it blocks automated checks`;
+        continue;
+      }
       const headers: Record<string, string> = {};
       res.headers.forEach((v, k) => {
         headers[k.toLowerCase()] = v;
@@ -160,8 +172,10 @@ async function inspectWebsite(domain: string): Promise<WebDetails> {
       };
     } catch (e) {
       lastError = describeFetchError(e);
+      if (isTimeout(e)) inconclusive ??= `the website didn't respond within ${FETCH_TIMEOUT_MS / 1000} seconds`;
     }
   }
+  if (inconclusive) return { ...UNAVAILABLE_WEB, error: inconclusive };
   return { ...UNAVAILABLE_WEB, available: true, error: lastError };
 }
 
@@ -197,6 +211,7 @@ async function handle(rawDomain: string | null, simulate: boolean) {
   }
   const notes: string[] = [];
   if (mailDomain !== domain) notes.push(`Email checks ran on the organizational domain ${mailDomain}.`);
+  if (!web.available && web.error) notes.push(`Website not graded: ${web.error}. The grade covers email only. Try again in a few minutes.`);
   return NextResponse.json(assembleResult(mailDomain, "live-server", emailResult.v, web, notes), {
     headers: { "cache-control": "no-store" },
   });

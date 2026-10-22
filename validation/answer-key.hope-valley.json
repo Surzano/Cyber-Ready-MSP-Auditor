@@ -1,0 +1,159 @@
+{
+  "tenant": "Hope Valley Community Services (synthetic sample)",
+  "accounts": {
+    "margaret.chen@hopevalleycs.org": {
+      "mfa": true,
+      "enabled": true,
+      "globalAdmin": true,
+      "stale": false,
+      "paidLicense": true
+    },
+    "david.okafor@hopevalleycs.org": {
+      "mfa": true,
+      "enabled": true,
+      "globalAdmin": false,
+      "stale": false,
+      "paidLicense": true
+    },
+    "linda.park@hopevalleycs.org": {
+      "mfa": true,
+      "enabled": true,
+      "globalAdmin": true,
+      "stale": false,
+      "paidLicense": true
+    },
+    "apexadmin@hopevalleycs.org": {
+      "mfa": true,
+      "enabled": true,
+      "globalAdmin": true,
+      "stale": false,
+      "paidLicense": false
+    },
+    "apex.tech2@hopevalleycs.org": {
+      "mfa": true,
+      "enabled": true,
+      "globalAdmin": true,
+      "stale": false,
+      "paidLicense": false
+    },
+    "tom.reyes@hopevalleycs.org": {
+      "mfa": false,
+      "enabled": true,
+      "globalAdmin": true,
+      "stale": false,
+      "paidLicense": true
+    },
+    "robert.hayes@hopevalleycs.org": {
+      "mfa": false,
+      "enabled": true,
+      "globalAdmin": false,
+      "stale": false,
+      "paidLicense": true
+    },
+    "aisha.johnson@hopevalleycs.org": {
+      "mfa": false,
+      "enabled": true,
+      "globalAdmin": false,
+      "stale": false,
+      "paidLicense": true
+    },
+    "kevin.walsh@hopevalleycs.org": {
+      "mfa": false,
+      "enabled": true,
+      "globalAdmin": false,
+      "stale": true,
+      "paidLicense": true
+    },
+    "sarah.lindqvist@hopevalleycs.org": {
+      "mfa": true,
+      "enabled": true,
+      "globalAdmin": false,
+      "stale": true,
+      "paidLicense": true
+    },
+    "marcus.bell@hopevalleycs.org": {
+      "mfa": true,
+      "enabled": true,
+      "globalAdmin": false,
+      "stale": true,
+      "paidLicense": true
+    },
+    "jennifer.wu@hopevalleycs.org": {
+      "mfa": true,
+      "enabled": false,
+      "globalAdmin": false,
+      "stale": false,
+      "paidLicense": false
+    },
+    "info@hopevalleycs.org": {
+      "mfa": false,
+      "enabled": false,
+      "globalAdmin": false,
+      "stale": false,
+      "paidLicense": false
+    },
+    "priya.natarajan@hopevalleycs.org": {
+      "mfa": true,
+      "enabled": true,
+      "globalAdmin": false,
+      "stale": false,
+      "paidLicense": true
+    },
+    "james.carter@hopevalleycs.org": {
+      "mfa": true,
+      "enabled": true,
+      "globalAdmin": false,
+      "stale": false,
+      "paidLicense": true
+    },
+    "elena.rodriguez@hopevalleycs.org": {
+      "mfa": true,
+      "enabled": true,
+      "globalAdmin": false,
+      "stale": false,
+      "paidLicense": true
+    },
+    "samuel.brooks@hopevalleycs.org": {
+      "mfa": true,
+      "enabled": true,
+      "globalAdmin": false,
+      "stale": false,
+      "paidLicense": true
+    },
+    "grace.kim@hopevalleycs.org": {
+      "mfa": true,
+      "enabled": true,
+      "globalAdmin": false,
+      "stale": false,
+      "paidLicense": true
+    },
+    "omar.haddad@hopevalleycs.org": {
+      "mfa": true,
+      "enabled": true,
+      "globalAdmin": false,
+      "stale": false,
+      "paidLicense": true
+    },
+    "rachel.green@hopevalleycs.org": {
+      "mfa": true,
+      "enabled": true,
+      "globalAdmin": false,
+      "stale": false,
+      "paidLicense": true
+    },
+    "daniel.foster@hopevalleycs.org": {
+      "mfa": true,
+      "enabled": true,
+      "globalAdmin": false,
+      "stale": false,
+      "paidLicense": true
+    },
+    "mei.lin@hopevalleycs.org": {
+      "mfa": true,
+      "enabled": true,
+      "globalAdmin": false,
+      "stale": false,
+      "paidLicense": true
+    }
+  }
+}

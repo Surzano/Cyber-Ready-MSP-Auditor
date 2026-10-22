@@ -99,7 +99,7 @@ function OrgEditor({ org, onChange }: { org: OrgProfile; onChange: (o: OrgProfil
   return (
     <Card className="p-5">
       <div className="mb-3 flex items-center gap-2 text-sm font-bold text-stone-800">
-        <Building2 className="h-4 w-4" /> Organization Profile <span className="font-normal text-stone-500">— used in tickets and the one-pager</span>
+        <Building2 className="h-4 w-4" /> Organization details <span className="font-normal text-stone-500">(used in the tickets and the one-pager)</span>
       </div>
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
         {field("orgName", "Organization")}
@@ -212,7 +212,7 @@ function BoardOnePager({ ctx, composite }: { ctx: AuditContext; composite: Retur
       <header className="flex flex-wrap items-start justify-between gap-4 border-b-2 border-ink-900 pb-5">
         <div>
           <div className="flex items-center gap-2 text-[11px] font-bold tracking-[0.18em] text-moss-700 uppercase">
-            <ShieldCheck className="h-4 w-4" /> Board Cyber Risk Briefing
+            <ShieldCheck className="h-4 w-4" /> Board cyber risk briefing
           </div>
           <h1 className="mt-1 font-serif text-3xl font-semibold text-ink-950">{ctx.org.orgName}</h1>
           <div className="mt-1 text-sm text-stone-600">
@@ -228,7 +228,7 @@ function BoardOnePager({ ctx, composite }: { ctx: AuditContext; composite: Retur
 
       <section className="print-avoid-break mt-6 grid gap-6 sm:grid-cols-[auto_1fr]">
         <div className={cx("flex flex-col items-center justify-center rounded-md px-8 py-5 ring-2 ring-inset", tone.bg, tone.ring)}>
-          <div className="text-[11px] font-bold tracking-widest text-stone-500 uppercase">Overall Grade</div>
+          <div className="text-[11px] font-bold tracking-widest text-stone-500 uppercase">Overall grade</div>
           <div className={cx("font-serif text-7xl leading-none font-semibold", tone.text)}>{composite.grade}</div>
           <div className="mt-1 text-sm font-semibold text-stone-600 tabular-nums">{composite.score} / 100</div>
         </div>
@@ -253,7 +253,7 @@ function BoardOnePager({ ctx, composite }: { ctx: AuditContext; composite: Retur
 
       <section className="mt-7">
         <h2 className="flex items-center gap-2 text-sm font-bold tracking-wide text-ink-900 uppercase">
-          <AlertOctagon className="h-4 w-4 text-brick-600" /> Top 3 Business Risks
+          <AlertOctagon className="h-4 w-4 text-brick-600" /> Top 3 business risks
         </h2>
         <div className="mt-3 grid gap-3 sm:grid-cols-3">
           {risks.map((r) => (
@@ -281,7 +281,7 @@ function BoardOnePager({ ctx, composite }: { ctx: AuditContext; composite: Retur
       <section className="print-avoid-break mt-7 grid gap-5 sm:grid-cols-[1fr_220px]">
         <div>
           <h2 className="flex items-center gap-2 text-sm font-bold tracking-wide text-ink-900 uppercase">
-            <Zap className="h-4 w-4 text-ochre-500" /> Immediate Quick Wins (next 30 days)
+            <Zap className="h-4 w-4 text-ochre-500" /> Quick wins for the next 30 days
           </h2>
           <ol className="mt-3 divide-y divide-stone-100 rounded-md border border-stone-200">
             {wins.map((w, i) => (
@@ -300,14 +300,14 @@ function BoardOnePager({ ctx, composite }: { ctx: AuditContext; composite: Retur
         <div className="flex flex-col gap-3">
           <div className="rounded-md bg-ink-900 p-4 text-white">
             <div className="flex items-center gap-1.5 text-[11px] font-bold tracking-widest text-moss-300 uppercase">
-              <Banknote className="h-4 w-4" /> Est. Annual Savings
+              <Banknote className="h-4 w-4" /> Estimated yearly savings
             </div>
             <div className="mt-1 text-3xl font-semibold tabular-nums">{formatUsd(savings)}</div>
             <div className="text-xs text-stone-300">{ctx.identity ? `Reclaimed from ${ctx.identity.wasted.length} unused license${ctx.identity.wasted.length === 1 ? "" : "s"}` : "Run the identity audit to estimate"}</div>
           </div>
           <div className="rounded-md border border-stone-200 p-4">
             <div className="flex items-center gap-1.5 text-[11px] font-bold tracking-widest text-stone-500 uppercase">
-              <TrendingUp className="h-4 w-4" /> Board Asks
+              <TrendingUp className="h-4 w-4" /> What we ask of the board
             </div>
             <ul className="mt-2 space-y-1.5 text-xs text-stone-700">
               <li>1. Direct staff to send the 3 attached tickets to {ctx.org.mspName}.</li>
@@ -320,7 +320,7 @@ function BoardOnePager({ ctx, composite }: { ctx: AuditContext; composite: Retur
 
       <footer className="mt-7 flex flex-wrap items-center justify-between gap-3 border-t border-stone-200 pt-4 text-[10.5px] text-stone-500">
         <div className="flex items-center gap-1.5">
-          <Lock className="h-3 w-3" /> Zero data retention: user lists and scorecard answers were processed only in the browser. Domain checks use public DNS and HTTP headers.
+          <Lock className="h-3 w-3" /> User lists and report card answers were processed only in the browser and were not stored. Domain checks use public DNS and HTTP headers.
         </div>
       </footer>
     </article>
