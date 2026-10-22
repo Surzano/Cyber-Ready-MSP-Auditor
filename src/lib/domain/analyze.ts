@@ -215,11 +215,24 @@ export async function analyzeDkim(domain: string, resolver: TxtResolver): Promis
 // MX / provider detection
 // ---------------------------------------------------------------------------
 
+/**
+ * Node's resolveMx returns an empty exchange and DoH returns "." for an RFC 7505 null MX,
+ * so after trailing-dot stripping both arrive as "0 " — restore the canonical "0 .".
+ */
+export function normalizeMx(mx: string[]): string[] {
+  return mx.map((m) => (/^\d+\s*\.?$/.test(m.trim()) ? `${parseInt(m, 10)} .` : m));
+}
+
+/** RFC 7505 null MX: the domain explicitly accepts no email. */
+export function isNullMx(mx: string[]): boolean {
+  return mx.length === 1 && /^0 \.$/.test(mx[0]);
+}
+
 export function detectProvider(mx: string[], spfIncludes: string[]): DomainScanResult["emailProvider"] {
   const all = [...mx, ...spfIncludes].join(" ").toLowerCase();
   if (all.includes("protection.outlook.com") || all.includes("outlook.com")) return "Microsoft 365";
   if (all.includes("google.com") || all.includes("googlemail.com")) return "Google Workspace";
-  if (mx.length === 0) return "None detected";
+  if (mx.length === 0 || isNullMx(mx)) return "None detected";
   return "Other";
 }
 
@@ -234,7 +247,7 @@ export interface EmailAnalysis {
 /** Runs every email-auth check through whichever resolver the caller supplies. */
 export async function analyzeEmail(domain: string, resolver: TxtResolver): Promise<EmailAnalysis> {
   const [mx, spf, dmarc, dkim] = await Promise.all([
-    resolver.mx(domain).catch(() => [] as string[]),
+    resolver.mx(domain).then(normalizeMx, () => [] as string[]),
     analyzeSpf(domain, resolver),
     analyzeDmarc(domain, resolver),
     analyzeDkim(domain, resolver),

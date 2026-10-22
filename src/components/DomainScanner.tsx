@@ -2,6 +2,7 @@
 
 import { Code2, FlaskConical, Globe, Loader2, Mail, MessageSquareText, Radar, Search, ServerCog, ShieldAlert, WifiOff } from "lucide-react";
 import { useState } from "react";
+import { isNullMx } from "@/lib/domain/analyze";
 import { ScanError, scanDomain } from "@/lib/domain/clientScan";
 import { simulatedScan } from "@/lib/domain/simulated";
 import type { CheckResult, DomainScanResult } from "@/lib/types";
@@ -139,7 +140,7 @@ export function DomainScanner({
                 <div className="flex justify-between gap-2">
                   <dt className="text-slate-500">MX</dt>
                   <dd className="truncate font-mono text-slate-700" title={result.mx.join(", ")}>
-                    {result.mx[0]?.split(" ").pop() ?? "none"}
+                    {isNullMx(result.mx) ? "null MX (no mail)" : (result.mx[0]?.split(" ").pop() ?? "none")}
                   </dd>
                 </div>
                 <div className="flex justify-between gap-2">

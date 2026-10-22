@@ -160,7 +160,7 @@ function parseDate(v: string | undefined): Date | null {
 
 function parseAccountType(v: string | undefined, upn: string, name: string): AccountType {
   const s = `${v ?? ""}`.toLowerCase();
-  if (/guest/.test(s) || upn.includes("#ext#")) return "Guest";
+  if (/guest/.test(s) || /#ext#/i.test(upn)) return "Guest";
   if (/shared|service|room|resource|equipment/.test(s)) return "Shared/Service";
   if (!s && /^(info|admin|office|donations|noreply|no-reply|scanner|frontdesk)@/i.test(upn)) return "Shared/Service";
   if (!s && /shared mailbox|service account/i.test(name)) return "Shared/Service";

@@ -4,6 +4,10 @@
 
 Built by **Surzano R. Solomon**, Cybersecurity Practitioner Intern, **Cyber Ready Clinic**.
 
+**▶ Live demo: [cyber-ready-msp-auditor.vercel.app](https://cyber-ready-msp-auditor.vercel.app/?demo=1)**
+
+[![CI](https://github.com/Surzano/Cyber-Ready-MSP-Auditor/actions/workflows/ci.yml/badge.svg)](https://github.com/Surzano/Cyber-Ready-MSP-Auditor/actions/workflows/ci.yml)
+
 `Next.js 15 (App Router)` · `TypeScript` · `Tailwind CSS 4` · `Lucide` · `Node dns.promises` · `DNS-over-HTTPS` · `Vercel / GitHub Pages`
 
 ---
@@ -102,8 +106,8 @@ Letter grades: **A+** ≥ 97 · **A** ≥ 90 · **B** ≥ 80 · **C** ≥ 70 · 
 Requires **Node.js 20.9+** (Node 22.18+/24 needed only for `npm run sample:csv`).
 
 ```bash
-git clone https://github.com/<your-username>/cyber-ready-msp-auditor.git
-cd cyber-ready-msp-auditor
+git clone https://github.com/Surzano/Cyber-Ready-MSP-Auditor.git
+cd Cyber-Ready-MSP-Auditor
 npm install
 npm run dev            # http://localhost:3000   (try /?demo=1)
 ```
@@ -114,6 +118,7 @@ npm run dev            # http://localhost:3000   (try /?demo=1)
 | `npm run build` / `npm start` | Production build (includes the `/api/scan-domain` serverless route) |
 | `npm run build:pages` | Static export to `out/` for GitHub Pages (DoH fallback mode) |
 | `npm run lint` / `npm run typecheck` | ESLint / TypeScript checks |
+| `npm test` | Vitest unit tests for the SPF/DMARC/DKIM/header graders, domain sanitizer, CSV parser, identity audit rules, and scoring (also run in CI on every push) |
 | `npm run sample:csv` | Regenerate the synthetic CSVs in `public/` with sign-in dates relative to today |
 
 Test the API directly:
@@ -193,7 +198,8 @@ src/
    ├─ identity.ts                # CSV parser, header mapping, audit rules
    ├─ scorecard.ts               # 10 questions, MSP scripts, ticket actions
    ├─ reports.ts                 # composite grade, tickets, board risks, quick wins
-   └─ sampleData.ts              # synthetic Hope Valley dataset + CSV builders
+   ├─ sampleData.ts              # synthetic Hope Valley dataset + CSV builders
+   └─ **/*.test.ts               # Vitest suites; fixtures are inline strings so no CSV is ever committed
 ```
 
 ## 11. Limitations & Responsible Use
